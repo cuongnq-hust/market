@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet Map Custom Styling */
+.leaflet-container {
+  font-family: inherit !important;
+  z-index: 1;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #f1f5f9;
+}
+
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-buyer-icon,
+.custom-seller-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none;
+}
+
+/* Custom Marker Styles */
+.user-buyer-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.user-buyer-pulse {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background-color: rgba(37, 99, 235, 0.35);
+  border-radius: 9999px;
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.user-buyer-dot {
+  width: 22px;
+  height: 22px;
+  background-color: #2563eb;
+  border: 3px solid #ffffff;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  cursor: grab;
+}
+
+/* Store Pin (Orange) */
+.seller-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: white;
+  border: 2.5px solid #ea580c;
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.35);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.seller-pin:hover {
+  transform: scale(1.18);
+  border-color: #c2410c;
+}
+
+/* Individual Seller Pin (Purple) */
+.seller-pin.individual {
+  border-color: #9333ea !important;
+  box-shadow: 0 4px 10px rgba(147, 51, 234, 0.35) !important;
+}
+
+.seller-pin.individual:hover {
+  transform: scale(1.18);
+  border-color: #7e22ce !important;
+}
+
+.seller-pin.closed {
+  border-color: #9ca3af;
+  box-shadow: 0 2px 6px rgba(156, 163, 175, 0.3);
+  filter: grayscale(40%);
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
