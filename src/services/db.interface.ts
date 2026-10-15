@@ -53,4 +53,6 @@ export interface IDataService {
     commentData: Omit<ForumComment, 'id' | 'createdAt'>
   ): Promise<ForumComment>;
   toggleLikePost(postId: string): Promise<boolean>;
+  deleteForumPost(postId: string): Promise<boolean>;
+  markForumPostAsSold(postId: string): Promise<boolean>;
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import {
   X,
   Store,
@@ -15,6 +15,7 @@ import { useGeolocation } from '../../composables/useGeolocation';
 import type { ProductCategory, ProductCondition, ProductPrice, SellerType } from '../../types/database';
 import { CATEGORIES } from '../../utils/constants';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { getAnonymousDeviceId, getSavedProfile, saveUserProfile } from '../../utils/deviceSession';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -29,8 +30,8 @@ const form = reactive({
   address: 'Số 28 ngõ 68 Cầu Giấy, Hà Nội',
   latitude: userLocation.value.latitude,
   longitude: userLocation.value.longitude,
-  phone: '0981234567',
-  zalo: '0981234567',
+  phone: '',
+  zalo: '',
   description: '',
   // Initial product
   productTitle: '',
@@ -41,6 +42,17 @@ const form = reactive({
   images: [
     'https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?auto=format&fit=crop&w=600&q=80',
   ],
+});
+
+// Auto-fill from saved profile
+onMounted(() => {
+  const saved = getSavedProfile();
+  if (saved) {
+    if (saved.name) form.shopName = saved.name;
+    if (saved.phone) form.phone = saved.phone;
+    if (saved.zalo) form.zalo = saved.zalo;
+    if (saved.address) form.address = saved.address;
+  }
 });
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -112,10 +124,18 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    const userId = `my-seller-${Date.now()}`;
+    const userId = getAnonymousDeviceId();
     let finalPrice: ProductPrice = form.priceAmount;
     if (form.priceMode === 'negotiable') finalPrice = 'negotiable';
     if (form.priceMode === 'free') finalPrice = 'free';
+
+    // Auto-save user profile for next time
+    saveUserProfile({
+      name: form.shopName.trim(),
+      phone: form.phone.trim(),
+      zalo: form.zalo.trim(),
+      address: form.address.trim(),
+    });
 
     await registerNewSeller(
       {
@@ -130,7 +150,7 @@ const handleSubmit = async () => {
         closeTime: form.sellerType === 'individual' ? '22:00' : '20:00',
         isOpenNow: true,
         phone: form.phone.trim(),
-        zalo: form.zalo.trim(),
+        zalo: form.zalo.trim() || form.phone.trim(),
         rating: 5.0,
         isVerified: true,
         description: form.description.trim() || (form.sellerType === 'individual' ? 'Người bán đơn lẻ thanh lý đồ dọn nhà' : 'Điểm thu mua & thanh lý phế liệu'),

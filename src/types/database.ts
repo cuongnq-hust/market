@@ -126,6 +126,9 @@ export interface ForumPost {
   isLiked?: boolean;
   commentsCount: number;
   createdAt: string;
+  expiresAt?: string; // Thời gian hết hạn (auto-expire)
+  status?: 'available' | 'sold'; // 'available': còn hàng, 'sold': đã bán/ẩn
+  isMyPost?: boolean; // Bài viết do chính thiết bị này tạo
 }
 
 export interface ForumFilterState {

@@ -7,16 +7,24 @@ import {
   Tag,
   Zap,
   Share2,
+  Trash2,
+  CheckCircle2,
+  Clock,
 } from 'lucide-vue-next';
 import type { ForumPost } from '../../types/database';
 import { formatPrice, formatRelativeTime } from '../../utils/formatters';
 import { CATEGORIES } from '../../utils/constants';
+import { useForum } from '../../composables/useForum';
 
-defineProps<{
+const props = defineProps<{
   post: ForumPost;
 }>();
 
+const { deletePost, markPostAsSold } = useForum();
+
 const copiedLink = ref(false);
+const isDeleting = ref(false);
+const isMarkingSold = ref(false);
 
 const getCategoryLabel = (catKey: string) => {
   return CATEGORIES.find((c) => c.key === catKey)?.label || catKey;
@@ -33,10 +41,43 @@ const copyShareLink = () => {
     // fallback
   }
 };
+
+const handleDelete = async () => {
+  if (confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) {
+    isDeleting.value = true;
+    try {
+      await deletePost(props.post.id);
+    } finally {
+      isDeleting.value = false;
+    }
+  }
+};
+
+const handleMarkSold = async () => {
+  isMarkingSold.value = true;
+  try {
+    await markPostAsSold(props.post.id);
+  } finally {
+    isMarkingSold.value = false;
+  }
+};
+
+const getExpiryText = (expiresAt?: string) => {
+  if (!expiresAt) return null;
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  if (diffMs <= 0) return 'Đã hết hạn';
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return `Còn ${days} ngày`;
+};
 </script>
 
 <template>
-  <article class="bg-white rounded-2xl border border-gray-200 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden">
+  <article
+    class="rounded-2xl border shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden"
+    :class="post.status === 'sold'
+      ? 'bg-gray-50/80 border-gray-200 opacity-80'
+      : 'bg-white border-gray-200'"
+  >
     <!-- Post Header: Author Info & Badges -->
     <div class="p-4 sm:p-5 pb-3">
       <div class="flex items-start justify-between gap-3">
@@ -73,8 +114,34 @@ const copyShareLink = () => {
           </div>
         </div>
 
-        <!-- Badges (Post Type & Urgent) -->
+        <!-- Badges (Sold, My Post, Expiry, Urgent, Post Type) -->
         <div class="flex items-center gap-1.5 flex-wrap justify-end">
+          <!-- Sold Badge -->
+          <span
+            v-if="post.status === 'sold'"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-gray-200 text-gray-700"
+          >
+            ĐÃ BÁN
+          </span>
+
+          <!-- My Post Badge -->
+          <span
+            v-if="post.isMyPost"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 shadow-xs"
+          >
+            <span>👤</span>
+            <span>Tin của bạn</span>
+          </span>
+
+          <!-- Expiry countdown -->
+          <span
+            v-if="getExpiryText(post.expiresAt)"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500"
+          >
+            <Clock class="w-3 h-3 text-gray-400" />
+            <span>{{ getExpiryText(post.expiresAt) }}</span>
+          </span>
+
           <!-- Urgent Badge -->
           <span
             v-if="post.isUrgent"
@@ -164,6 +231,44 @@ const copyShareLink = () => {
             loading="lazy"
           />
         </div>
+      </div>
+    </div>
+
+    <!-- Owner Actions Bar (Chỉ hiển thị cho người đăng trên thiết bị này) -->
+    <div v-if="post.isMyPost" class="px-4 sm:px-5 py-2.5 bg-purple-50/80 border-t border-purple-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <span class="text-purple-900 font-bold flex items-center gap-1.5">
+        <span>👤</span>
+        <span>Quản lý tin của bạn:</span>
+      </span>
+
+      <div class="flex items-center gap-2">
+        <!-- Mark as Sold -->
+        <button
+          v-if="post.status !== 'sold'"
+          type="button"
+          @click="handleMarkSold"
+          :disabled="isMarkingSold"
+          class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95"
+        >
+          <CheckCircle2 class="w-3.5 h-3.5" />
+          <span>{{ isMarkingSold ? 'Đang lưu...' : 'Đã bán xong (Ẩn tin)' }}</span>
+        </button>
+        <span v-else class="text-xs font-bold text-gray-500 bg-gray-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
+          <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" />
+          <span>Đã đánh dấu Đã bán</span>
+        </span>
+
+        <!-- Delete Post -->
+        <button
+          type="button"
+          @click="handleDelete"
+          :disabled="isDeleting"
+          class="px-3 py-1.5 rounded-xl bg-white hover:bg-red-50 text-red-600 border border-red-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+          title="Xóa vĩnh viễn bài viết"
+        >
+          <Trash2 class="w-3.5 h-3.5" />
+          <span>{{ isDeleting ? 'Đang xóa...' : 'Xóa tin' }}</span>
+        </button>
       </div>
     </div>
 

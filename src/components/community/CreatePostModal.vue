@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import {
   X,
   Plus,
@@ -7,11 +7,13 @@ import {
   Upload,
   Image as ImageIcon,
   Loader2,
+  Clock,
 } from 'lucide-vue-next';
 import { useForum } from '../../composables/useForum';
 import type { ForumPostType, ProductCategory, ProductPrice } from '../../types/database';
 import { CATEGORIES, HANOI_DISTRICTS } from '../../utils/constants';
 import { compressImageFile } from '../../utils/imageCompressor';
+import { getAnonymousDeviceId, getSavedProfile, saveUserProfile } from '../../utils/deviceSession';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -29,12 +31,24 @@ const form = reactive({
   district: 'Cầu Giấy',
   city: 'Hà Nội',
   isUrgent: false,
-  authorName: 'Nguyễn Văn Minh',
-  phone: '0988776655',
-  zalo: '0988776655',
+  authorName: 'Người dùng',
+  phone: '',
+  zalo: '',
+  expiryDays: 7 as 3 | 7 | 14,
   images: [
     'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=700&q=80',
   ],
+});
+
+// Auto-fill profile from saved local device data
+onMounted(() => {
+  const saved = getSavedProfile();
+  if (saved) {
+    if (saved.name) form.authorName = saved.name;
+    if (saved.phone) form.phone = saved.phone;
+    if (saved.zalo) form.zalo = saved.zalo;
+    if (saved.district) form.district = saved.district;
+  }
 });
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -109,6 +123,17 @@ const handleSubmit = async () => {
     if (form.priceMode === 'negotiable') finalPrice = 'negotiable';
     if (form.priceMode === 'free') finalPrice = 'free';
 
+    const deviceId = getAnonymousDeviceId();
+    const expiresAt = new Date(Date.now() + form.expiryDays * 24 * 60 * 60 * 1000).toISOString();
+
+    // Auto-save user profile for seamless next time
+    saveUserProfile({
+      name: form.authorName.trim(),
+      phone: form.phone.trim(),
+      zalo: form.zalo.trim(),
+      district: form.district,
+    });
+
     await createPost({
       type: form.type,
       title: form.title.trim(),
@@ -119,12 +144,14 @@ const handleSubmit = async () => {
       district: form.district,
       city: form.city,
       isUrgent: form.isUrgent,
+      expiresAt,
+      status: 'available',
       author: {
-        id: `user-${Date.now()}`,
-        name: form.authorName.trim() || 'Người dùng ẩn danh',
+        id: deviceId,
+        name: form.authorName.trim() || 'Người dùng Pass Đồ',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
         phone: form.phone.trim(),
-        zalo: form.zalo.trim(),
+        zalo: form.zalo.trim() || form.phone.trim(),
         role: form.type === 'sell' ? 'seller' : 'buyer',
       },
     });
@@ -435,6 +462,38 @@ const handleSubmit = async () => {
               class="px-3 py-2 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
             />
           </div>
+          <span class="text-[10px] text-gray-400 block mt-1">
+            * Thông tin liên hệ sẽ được tự động ghi nhớ trên máy để bạn không cần nhập lại ở các lần đăng sau.
+          </span>
+        </div>
+
+        <!-- 9. Auto-Expire Duration Selector -->
+        <div class="p-3 bg-blue-50/70 border border-blue-200/80 rounded-2xl">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+              <Clock class="w-3.5 h-3.5 text-blue-600" />
+              <span>Thời hạn hiển thị (Tự động ẩn tin)</span>
+            </label>
+            <span class="text-[11px] text-blue-700 font-semibold">Tự ẩn sau {{ form.expiryDays }} ngày</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="days in [3, 7, 14]"
+              :key="days"
+              type="button"
+              @click="form.expiryDays = days as (3 | 7 | 14)"
+              class="py-1.5 text-xs font-bold rounded-xl border transition text-center"
+              :class="form.expiryDays === days
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-blue-50/50'"
+            >
+              {{ days }} ngày
+            </button>
+          </div>
+          <p class="text-[10px] text-blue-600/80 mt-1.5 leading-normal">
+            Tránh bị người mua gọi điện làm phiền sau khi đồ đã thanh lý xong. Bạn cũng có thể bấm "Đã bán" bất cứ lúc nào.
+          </p>
         </div>
 
         <!-- Submit Buttons -->

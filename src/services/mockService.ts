@@ -17,6 +17,7 @@ import { MOCK_PRODUCTS } from '../mock/products';
 import { MOCK_FORUM_POSTS } from '../mock/forumPosts';
 import { MOCK_FORUM_COMMENTS } from '../mock/forumComments';
 import { calculateDistanceKm, isWithinRadius } from '../utils/geo';
+import { getAnonymousDeviceId } from '../utils/deviceSession';
 
 class MockDataService implements IDataService {
   private users: User[] = [...MOCK_USERS];
@@ -329,8 +330,20 @@ class MockDataService implements IDataService {
   // ================= PHASE 2: COMMUNITY FORUM HUB =================
   async getForumPosts(filters: ForumFilterState): Promise<ForumPost[]> {
     const query = filters.searchQuery.trim().toLowerCase();
+    const currentDeviceId = getAnonymousDeviceId();
+    const now = Date.now();
 
     const filtered = this.forumPosts.filter((post) => {
+      // 1. Auto-expire: Hide posts past expiration (unless it's my post)
+      if (post.expiresAt && new Date(post.expiresAt).getTime() < now) {
+        if (post.author.id !== currentDeviceId) return false;
+      }
+
+      // 2. Hide sold out posts (unless it's my post)
+      if (post.status === 'sold') {
+        if (post.author.id !== currentDeviceId) return false;
+      }
+
       if (post.type !== filters.postType) {
         return false;
       }
@@ -355,7 +368,10 @@ class MockDataService implements IDataService {
       }
 
       return true;
-    });
+    }).map((post) => ({
+      ...post,
+      isMyPost: post.author.id === currentDeviceId,
+    }));
 
     return filtered.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -363,24 +379,53 @@ class MockDataService implements IDataService {
   }
 
   async getForumPostById(id: string): Promise<ForumPost | null> {
-    return this.forumPosts.find((p) => p.id === id) || null;
+    const post = this.forumPosts.find((p) => p.id === id);
+    if (!post) return null;
+    return {
+      ...post,
+      isMyPost: post.author.id === getAnonymousDeviceId(),
+    };
   }
 
   async createForumPost(
     postData: Omit<ForumPost, 'id' | 'createdAt' | 'likesCount' | 'commentsCount'>
   ): Promise<ForumPost> {
+    const defaultExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const newPost: ForumPost = {
       ...postData,
       id: `post-${Date.now()}`,
+      status: postData.status || 'available',
+      expiresAt: postData.expiresAt || defaultExpiry,
       likesCount: 0,
       isLiked: false,
       commentsCount: 0,
       createdAt: new Date().toISOString(),
+      isMyPost: true,
     };
 
     this.forumPosts.unshift(newPost);
     this.saveToStorage();
     return newPost;
+  }
+
+  async deleteForumPost(postId: string): Promise<boolean> {
+    const idx = this.forumPosts.findIndex((p) => p.id === postId);
+    if (idx !== -1) {
+      this.forumPosts.splice(idx, 1);
+      this.saveToStorage();
+      return true;
+    }
+    return false;
+  }
+
+  async markForumPostAsSold(postId: string): Promise<boolean> {
+    const post = this.forumPosts.find((p) => p.id === postId);
+    if (post) {
+      post.status = 'sold';
+      this.saveToStorage();
+      return true;
+    }
+    return false;
   }
 
   async getPostComments(postId: string): Promise<ForumComment[]> {

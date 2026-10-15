@@ -16,6 +16,7 @@ import type {
   User,
 } from '../types/database';
 import { calculateDistanceKm } from '../utils/geo';
+import { getAnonymousDeviceId } from '../utils/deviceSession';
 import type { IDataService } from './db.interface';
 import { mockService } from './mockService';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
@@ -94,6 +95,8 @@ export class SupabaseService implements IDataService {
     }
 
     const authorUser = row.users || row.author;
+    const currentDeviceId = getAnonymousDeviceId();
+    const isMyPost = (row.author_id === currentDeviceId) || (row.author?.id === currentDeviceId);
 
     return {
       id: row.id,
@@ -117,6 +120,9 @@ export class SupabaseService implements IDataService {
       likesCount: row.likes_count || 0,
       commentsCount: row.comments_count || 0,
       createdAt: row.created_at || new Date().toISOString(),
+      expiresAt: row.expires_at || undefined,
+      status: (row.status as 'available' | 'sold') || 'available',
+      isMyPost,
     };
   }
 
@@ -600,7 +606,21 @@ export class SupabaseService implements IDataService {
         return mockService.getForumPosts(filters);
       }
 
-      let posts = data.map((row) => this.mapForumPost(row));
+      const now = Date.now();
+
+      let posts = data
+        .map((row) => this.mapForumPost(row))
+        .filter((p) => {
+          // 1. Auto-expire: hide if expired and not my post
+          if (p.expiresAt && new Date(p.expiresAt).getTime() < now) {
+            if (!p.isMyPost) return false;
+          }
+          // 2. Sold out: hide if sold and not my post
+          if (p.status === 'sold') {
+            if (!p.isMyPost) return false;
+          }
+          return true;
+        });
 
       if (filters.searchQuery?.trim()) {
         const q = filters.searchQuery.trim().toLowerCase();
@@ -643,7 +663,7 @@ export class SupabaseService implements IDataService {
       // Check author user
       let authorId = postData.author.id;
       if (!authorId || authorId.startsWith('user-')) {
-        authorId = crypto.randomUUID();
+        authorId = getAnonymousDeviceId();
       }
 
       try {
@@ -668,6 +688,8 @@ export class SupabaseService implements IDataService {
         priceType = 'free';
       }
 
+      const defaultExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const { data, error } = await this.client
         .from('forum_posts')
         .insert({
@@ -684,6 +706,8 @@ export class SupabaseService implements IDataService {
           is_urgent: Boolean(postData.isUrgent),
           likes_count: 0,
           comments_count: 0,
+          status: postData.status || 'available',
+          expires_at: postData.expiresAt || defaultExpiry,
         })
         .select()
         .single();
@@ -697,10 +721,40 @@ export class SupabaseService implements IDataService {
       return {
         ...this.mapForumPost(data),
         author: postData.author,
+        isMyPost: true,
       };
     } catch (err) {
       console.warn('Supabase createForumPost error, falling back to mock:', err);
       return mockService.createForumPost(postData);
+    }
+  }
+
+  async deleteForumPost(postId: string): Promise<boolean> {
+    if (!isSupabaseConfigured || !this.client) {
+      return mockService.deleteForumPost(postId);
+    }
+    try {
+      const { error } = await this.client.from('forum_posts').delete().eq('id', postId);
+      if (error) throw error;
+      return true;
+    } catch {
+      return mockService.deleteForumPost(postId);
+    }
+  }
+
+  async markForumPostAsSold(postId: string): Promise<boolean> {
+    if (!isSupabaseConfigured || !this.client) {
+      return mockService.markForumPostAsSold(postId);
+    }
+    try {
+      const { error } = await this.client
+        .from('forum_posts')
+        .update({ status: 'sold' })
+        .eq('id', postId);
+      if (error) throw error;
+      return true;
+    } catch {
+      return mockService.markForumPostAsSold(postId);
     }
   }
 

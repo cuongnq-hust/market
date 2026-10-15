@@ -104,6 +104,23 @@ export function useForum() {
     return newPost;
   };
 
+  const deletePost = async (postId: string) => {
+    const success = await dataService.deleteForumPost(postId);
+    if (success) {
+      posts.value = posts.value.filter((p) => p.id !== postId);
+    }
+    return success;
+  };
+
+  const markPostAsSold = async (postId: string) => {
+    const success = await dataService.markForumPostAsSold(postId);
+    if (success) {
+      const p = posts.value.find((item) => item.id === postId);
+      if (p) p.status = 'sold';
+    }
+    return success;
+  };
+
   return {
     forumFilters,
     posts,
@@ -115,5 +132,7 @@ export function useForum() {
     getComments,
     submitComment,
     createPost,
+    deletePost,
+    markPostAsSold,
   };
 }
