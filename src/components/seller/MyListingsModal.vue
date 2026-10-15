@@ -34,12 +34,8 @@ const showToast = (msg: string) => {
 const loadMyProducts = async () => {
   isLoading.value = true;
   try {
-    // Get all products, or products from individual / registered sellers
-    const all = await dataService.getProducts();
-    // Include user's own items + individual test items for demo
-    myProducts.value = all.filter(
-      (p) => p.isMyItem || p.sellerId.startsWith('indiv-') || p.sellerId.startsWith('my-')
-    );
+    const items = await dataService.getMyProducts();
+    myProducts.value = items;
   } finally {
     isLoading.value = false;
   }

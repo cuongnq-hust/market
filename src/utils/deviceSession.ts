@@ -20,8 +20,10 @@ export interface SavedUserProfile {
  */
 export function getAnonymousDeviceId(): string {
   let deviceId = localStorage.getItem(DEVICE_ID_KEY);
-  if (!deviceId) {
-    deviceId = 'device_' + crypto.randomUUID();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  // If no deviceId or deviceId has old prefix, generate a clean pure UUID
+  if (!deviceId || !uuidRegex.test(deviceId)) {
+    deviceId = crypto.randomUUID();
     localStorage.setItem(DEVICE_ID_KEY, deviceId);
   }
   return deviceId;

@@ -71,6 +71,9 @@ export class SupabaseService implements IDataService {
       price = 'free';
     }
 
+    const currentDeviceId = getAnonymousDeviceId();
+    const isMyItem = Boolean(row.is_my_item) || row.seller_id === currentDeviceId;
+
     return {
       id: row.id,
       sellerId: row.seller_id,
@@ -82,7 +85,7 @@ export class SupabaseService implements IDataService {
       images: row.images || [],
       status: row.status as ProductStatus,
       createdAt: row.created_at || new Date().toISOString(),
-      isMyItem: Boolean(row.is_my_item),
+      isMyItem,
     };
   }
 
@@ -194,10 +197,16 @@ export class SupabaseService implements IDataService {
         throw sellersRes.error;
       }
 
+      // If Supabase has no sellers yet, fall back to mock sellers so map is not empty
+      if (sellersRes.data.length === 0) {
+        return mockService.getNearbySellers(userLocation, filters);
+      }
+
       const usersMap = new Map((usersRes.data || []).map((u) => [u.id, this.mapUser(u)]));
       const products = (productsRes.data || []).map((p) => this.mapProduct(p));
 
       const query = filters.searchQuery.trim().toLowerCase();
+      const currentDeviceId = getAnonymousDeviceId();
 
       const sellersWithDist: SellerWithDistance[] = sellersRes.data.map((row) => {
         const seller = this.mapSeller(row);
@@ -216,10 +225,13 @@ export class SupabaseService implements IDataService {
         };
       });
 
-      return sellersWithDist.filter((seller) => {
-        // Hide individual sellers if sold out
+      const filteredSellers = sellersWithDist.filter((seller) => {
+        const isMyProfile = seller.userId === currentDeviceId;
+
+        // Hide individual sellers if sold out (don't hide if it's user's newly registered profile)
         if (seller.sellerType === 'individual') {
-          if (seller.isSoldOut || (seller.productsCount ?? 0) === 0) {
+          if (seller.isSoldOut) return false;
+          if (!isMyProfile && (seller.productsCount ?? 0) === 0) {
             return false;
           }
         }
@@ -255,7 +267,18 @@ export class SupabaseService implements IDataService {
         }
 
         return true;
-      }).sort((a, b) => a.distanceKm - b.distanceKm);
+      });
+
+      // Also merge mock store sellers so map has rich sample locations around Hanoi
+      const mockSellers = await mockService.getNearbySellers(userLocation, filters);
+      const combined = [...filteredSellers];
+      for (const ms of mockSellers) {
+        if (!combined.some((s) => s.userId === ms.userId)) {
+          combined.push(ms);
+        }
+      }
+
+      return combined.sort((a, b) => a.distanceKm - b.distanceKm);
     } catch (err) {
       console.warn('Supabase getNearbySellers error, falling back to mock:', err);
       return mockService.getNearbySellers(userLocation, filters);
@@ -271,25 +294,34 @@ export class SupabaseService implements IDataService {
     }
 
     try {
-      // 1. Check or insert user
+      // 1. Check or insert user - strictly validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       let userId = sellerData.userId;
-      if (!userId || userId.startsWith('user-')) {
-        userId = crypto.randomUUID();
+      if (!userId || !uuidRegex.test(userId)) {
+        userId = getAnonymousDeviceId();
+        if (!uuidRegex.test(userId)) {
+          userId = crypto.randomUUID();
+        }
       }
 
-      await this.client.from('users').upsert({
+      const { error: userErr } = await this.client.from('users').upsert({
         id: userId,
         name: sellerData.shopName,
         phone: sellerData.phone || '0901234567',
-        email: `${userId.slice(0, 8)}@passdo.local`,
+        email: `${userId}@passdo.local`,
         role: sellerData.sellerType === 'store' ? 'seller' : 'both',
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      });
+      }, { onConflict: 'id' });
 
-      // 2. Insert seller profile
+      if (userErr) {
+        console.error('Supabase user upsert error:', userErr);
+        throw userErr;
+      }
+
+      // 2. Upsert seller profile (MUST use onConflict user_id to allow updates/multiple posts)
       const { data: sellerRow, error: sellerErr } = await this.client
         .from('seller_profiles')
-        .insert({
+        .upsert({
           user_id: userId,
           shop_name: sellerData.shopName,
           seller_type: sellerData.sellerType,
@@ -303,14 +335,18 @@ export class SupabaseService implements IDataService {
           phone: sellerData.phone,
           zalo: sellerData.zalo,
           rating: 5.0,
-          is_verified: false,
+          is_verified: true,
           description: sellerData.description,
           is_sold_out: false,
-        })
+        }, { onConflict: 'user_id' })
         .select()
         .single();
 
-      if (sellerErr) throw sellerErr;
+      if (sellerErr || !sellerRow) {
+        console.error('Supabase seller profile upsert error:', sellerErr);
+        throw sellerErr;
+      }
+
       const createdSeller = this.mapSeller(sellerRow);
 
       // 3. Insert initial product if provided
@@ -341,17 +377,21 @@ export class SupabaseService implements IDataService {
           .select()
           .single();
 
-        if (!prodErr && prodRow) {
-          createdProduct = {
-            ...this.mapProduct(prodRow),
-            isMyItem: true,
-          };
+        if (prodErr || !prodRow) {
+          console.error('Supabase product insert error:', prodErr);
+          throw prodErr;
         }
+
+        createdProduct = {
+          ...this.mapProduct(prodRow),
+          isMyItem: true,
+        };
       }
 
+      console.log('✅ Registered seller in Supabase successfully:', createdSeller.shopName, createdProduct?.title);
       return { seller: createdSeller, product: createdProduct };
     } catch (err) {
-      console.warn('Supabase registerSeller error, falling back to mock:', err);
+      console.error('Supabase registerSeller failed, falling back to mock:', err);
       return mockService.registerSeller(sellerData, initialProduct);
     }
   }
@@ -386,7 +426,10 @@ export class SupabaseService implements IDataService {
       .select('*')
       .eq('seller_id', sellerId)
       .order('created_at', { ascending: false });
-    if (error || !data) return mockService.getProductsBySellerId(sellerId);
+
+    if (error || !data || data.length === 0) {
+      return mockService.getProductsBySellerId(sellerId);
+    }
     return data.map((p) => this.mapProduct(p));
   }
 
@@ -447,6 +490,14 @@ export class SupabaseService implements IDataService {
         });
       }
 
+      // Merge mock products so catalog is rich for first-time users
+      const mockProducts = await mockService.getNearbyProducts(userLocation, filters);
+      for (const mp of mockProducts) {
+        if (!result.some((p) => p.id === mp.id)) {
+          result.push(mp);
+        }
+      }
+
       return result.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
     } catch {
       return mockService.getNearbyProducts(userLocation, filters);
@@ -483,7 +534,10 @@ export class SupabaseService implements IDataService {
       .select()
       .single();
 
-    if (error || !data) return mockService.addProduct(product);
+    if (error || !data) {
+      console.warn('Supabase addProduct failed, falling back to mock:', error);
+      return mockService.addProduct(product);
+    }
     return {
       ...this.mapProduct(data),
       isMyItem: true,
@@ -558,9 +612,16 @@ export class SupabaseService implements IDataService {
     if (!isSupabaseConfigured || !this.client) {
       return mockService.getMyProducts();
     }
-    // Return all products created locally or with is_my_item flag
-    const { data } = await this.client.from('products').select('*').order('created_at', { ascending: false });
-    if (!data) return mockService.getMyProducts();
+    const currentDeviceId = getAnonymousDeviceId();
+    const { data } = await this.client
+      .from('products')
+      .select('*')
+      .eq('seller_id', currentDeviceId)
+      .order('created_at', { ascending: false });
+
+    if (!data || data.length === 0) {
+      return mockService.getMyProducts();
+    }
     return data.map((p) => ({
       ...this.mapProduct(p),
       isMyItem: true,

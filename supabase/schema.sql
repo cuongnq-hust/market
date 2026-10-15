@@ -183,3 +183,35 @@ ALTER TABLE public.seller_profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.forum_posts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.forum_comments DISABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON public.users TO anon, authenticated, service_role;
+GRANT ALL ON public.seller_profiles TO anon, authenticated, service_role;
+GRANT ALL ON public.products TO anon, authenticated, service_role;
+GRANT ALL ON public.forum_posts TO anon, authenticated, service_role;
+GRANT ALL ON public.forum_comments TO anon, authenticated, service_role;
+
+-- ==============================================================================
+-- 10. SAMPLE SEED DATA (DỮ LIỆU MẪU BAN ĐẦU TẠI HÀ NỘI)
+-- ==============================================================================
+-- Chạy phần này trong SQL Editor của Supabase nếu muốn có sẵn các điểm bán mẫu trên bản đồ:
+
+INSERT INTO public.users (id, name, phone, email, role, avatar)
+VALUES
+    ('a0000000-0000-0000-0000-000000000001', 'Vựa Phế Liệu & Ve Chai Chú Ba', '0903123456', 'chuba@passdo.local', 'seller', 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150'),
+    ('a0000000-0000-0000-0000-000000000002', 'Cửa Hàng Điện Tử Cũ Hoàng Phát', '0912987654', 'hoangphat@passdo.local', 'seller', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
+    ('a0000000-0000-0000-0000-000000000003', 'Kho Thanh Lý Đồ Gỗ Cũ Cầu Giấy', '0988776655', 'dogo@passdo.local', 'seller', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.seller_profiles (user_id, shop_name, seller_type, address, latitude, longitude, categories, open_time, close_time, is_open_now, phone, zalo, rating, is_verified, is_sold_out, description)
+VALUES
+    ('a0000000-0000-0000-0000-000000000001', 'Vựa Phế Liệu & Ve Chai Chú Ba', 'store', 'Số 15 ngõ 84 Ngọc Khánh, Ba Đình, Hà Nội', 21.031500, 105.819000, ARRAY['scrap', 'appliances'], '07:30', '18:30', true, '0903123456', '0903123456', 4.9, true, false, 'Chuyên thu gom ve chai, máy móc hỏng, tủ lạnh cũ, bình ắc quy.'),
+    ('a0000000-0000-0000-0000-000000000002', 'Cửa Hàng Điện Tử Cũ Hoàng Phát', 'store', 'Số 112 Tây Sơn, Đống Đa, Hà Nội', 21.011800, 105.824500, ARRAY['electronics'], '08:30', '21:00', true, '0912987654', '0912987654', 4.8, true, false, 'Mua bán màn hình máy tính cũ, case văn phòng, laptop cũ giá sinh viên.'),
+    ('a0000000-0000-0000-0000-000000000003', 'Kho Thanh Lý Đồ Gỗ Cũ Cầu Giấy', 'store', 'Số 68 Xuân Thủy, Cầu Giấy, Hà Nội', 21.036800, 105.789200, ARRAY['furniture', 'appliances'], '08:00', '20:00', true, '0988776655', '0988776655', 4.7, true, false, 'Thanh lý bàn ghế văn phòng, tủ quần áo, giá sách chuyển trọ.')
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO public.products (seller_id, title, description, category, price_type, price_amount, condition, images, status)
+VALUES
+    ('a0000000-0000-0000-0000-000000000002', 'Màn hình Dell 24 inch Ultrasharp cũ', 'Màn hình hiển thị đẹp, không điểm chết, chân đế nâng hạ tốt.', 'electronics', 'fixed', 1450000, 'used', ARRAY['https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80'], 'available'),
+    ('a0000000-0000-0000-0000-000000000003', 'Bàn làm việc gỗ thông 1m2 x 60cm', 'Bàn còn rất mới 95%, phù hợp sinh viên làm việc tại nhà.', 'furniture', 'fixed', 350000, 'used', ARRAY['https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&w=600&q=80'], 'available')
+ON CONFLICT (id) DO NOTHING;
+

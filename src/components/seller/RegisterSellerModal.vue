@@ -59,6 +59,8 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const isUploadingImage = ref(false);
 const customImageUrl = ref('');
 const isSubmitting = ref(false);
+const successMessage = ref<string | null>(null);
+const errorMessage = ref<string | null>(null);
 
 const presetImages = [
   { label: 'Tủ lạnh / Gia dụng', url: 'https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?auto=format&fit=crop&w=600&q=80' },
@@ -120,9 +122,14 @@ const useCurrentGpsLocation = () => {
 };
 
 const handleSubmit = async () => {
-  if (!form.shopName.trim()) return;
+  if (!form.shopName.trim()) {
+    errorMessage.value = 'Vui lòng nhập tên người bán hoặc tên cửa hàng / vựa.';
+    return;
+  }
 
   isSubmitting.value = true;
+  errorMessage.value = null;
+
   try {
     const userId = getAnonymousDeviceId();
     let finalPrice: ProductPrice = form.priceAmount;
@@ -136,6 +143,9 @@ const handleSubmit = async () => {
       zalo: form.zalo.trim(),
       address: form.address.trim(),
     });
+
+    const hasInitialProduct = Boolean(form.productTitle.trim()) || form.sellerType === 'individual';
+    const productTitle = form.productTitle.trim() || `${form.shopName.trim()} thanh lý đồ cũ`;
 
     await registerNewSeller(
       {
@@ -155,9 +165,9 @@ const handleSubmit = async () => {
         isVerified: true,
         description: form.description.trim() || (form.sellerType === 'individual' ? 'Người bán đơn lẻ thanh lý đồ dọn nhà' : 'Điểm thu mua & thanh lý phế liệu'),
       },
-      form.productTitle.trim()
+      hasInitialProduct
         ? {
-            title: form.productTitle.trim(),
+            title: productTitle,
             description: form.description.trim() || 'Món đồ thanh lý còn sử dụng tốt.',
             category: form.category,
             price: finalPrice,
@@ -167,10 +177,14 @@ const handleSubmit = async () => {
         : undefined
     );
 
-    isRegisterModalOpen.value = false;
-    emit('close');
-  } catch (err) {
+    successMessage.value = '🎉 Đã ghim vị trí và lưu món đồ lên bản đồ thành công!';
+    setTimeout(() => {
+      isRegisterModalOpen.value = false;
+      emit('close');
+    }, 1200);
+  } catch (err: any) {
     console.error('Failed to register seller:', err);
+    errorMessage.value = 'Có lỗi xảy ra khi lưu: ' + (err?.message || 'Vui lòng thử lại sau');
   } finally {
     isSubmitting.value = false;
   }
@@ -196,6 +210,28 @@ const handleSubmit = async () => {
           @click="$emit('close')"
           class="w-8 h-8 rounded-full bg-white/80 hover:bg-white text-gray-500 flex items-center justify-center shadow-xs transition active:scale-90"
         >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+
+      <!-- Success Notification Banner -->
+      <div
+        v-if="successMessage"
+        class="bg-emerald-600 text-white px-5 py-3 text-xs sm:text-sm font-bold flex items-center justify-between shadow-inner animate-fade-in"
+      >
+        <span>{{ successMessage }}</span>
+        <button type="button" @click="successMessage = null" class="text-white/80 hover:text-white">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+
+      <!-- Error Notification Banner -->
+      <div
+        v-if="errorMessage"
+        class="bg-red-500 text-white px-5 py-2.5 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-inner animate-fade-in"
+      >
+        <span>{{ errorMessage }}</span>
+        <button type="button" @click="errorMessage = null" class="text-white/80 hover:text-white">
           <X class="w-4 h-4" />
         </button>
       </div>
