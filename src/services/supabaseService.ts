@@ -138,8 +138,7 @@ export class SupabaseService implements IDataService {
     }
     const { data, error } = await this.client.from('users').select('*');
     if (error || !data) {
-      console.warn('Supabase getUsers error, falling back to mock:', error);
-      return mockService.getUsers();
+      return [];
     }
     return data.map((u) => this.mapUser(u));
   }
@@ -159,8 +158,7 @@ export class SupabaseService implements IDataService {
     }
     const { data, error } = await this.client.from('seller_profiles').select('*');
     if (error || !data) {
-      console.warn('Supabase getSellers error, falling back to mock:', error);
-      return mockService.getSellers();
+      return [];
     }
     return data.map((s) => this.mapSeller(s));
   }
@@ -197,9 +195,8 @@ export class SupabaseService implements IDataService {
         throw sellersRes.error;
       }
 
-      // If Supabase has no sellers yet, fall back to mock sellers so map is not empty
       if (sellersRes.data.length === 0) {
-        return mockService.getNearbySellers(userLocation, filters);
+        return [];
       }
 
       const usersMap = new Map((usersRes.data || []).map((u) => [u.id, this.mapUser(u)]));
@@ -269,19 +266,10 @@ export class SupabaseService implements IDataService {
         return true;
       });
 
-      // Also merge mock store sellers so map has rich sample locations around Hanoi
-      const mockSellers = await mockService.getNearbySellers(userLocation, filters);
-      const combined = [...filteredSellers];
-      for (const ms of mockSellers) {
-        if (!combined.some((s) => s.userId === ms.userId)) {
-          combined.push(ms);
-        }
-      }
-
-      return combined.sort((a, b) => a.distanceKm - b.distanceKm);
+      return filteredSellers.sort((a, b) => a.distanceKm - b.distanceKm);
     } catch (err) {
-      console.warn('Supabase getNearbySellers error, falling back to mock:', err);
-      return mockService.getNearbySellers(userLocation, filters);
+      console.warn('Supabase getNearbySellers error:', err);
+      return [];
     }
   }
 
@@ -404,7 +392,7 @@ export class SupabaseService implements IDataService {
       return mockService.getProducts();
     }
     const { data, error } = await this.client.from('products').select('*');
-    if (error || !data) return mockService.getProducts();
+    if (error || !data) return [];
     return data.map((p) => this.mapProduct(p));
   }
 
@@ -427,9 +415,7 @@ export class SupabaseService implements IDataService {
       .eq('seller_id', sellerId)
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return mockService.getProductsBySellerId(sellerId);
-    }
+    if (error || !data) return [];
     return data.map((p) => this.mapProduct(p));
   }
 
@@ -448,7 +434,7 @@ export class SupabaseService implements IDataService {
         this.client.from('users').select('*'),
       ]);
 
-      if (prodsRes.error || !prodsRes.data) return mockService.getNearbyProducts(userLocation, filters);
+      if (prodsRes.error || !prodsRes.data) return [];
 
       const sellersMap = new Map((sellersRes.data || []).map((s) => [s.user_id, this.mapSeller(s)]));
       const usersMap = new Map((usersRes.data || []).map((u) => [u.id, this.mapUser(u)]));
@@ -490,17 +476,9 @@ export class SupabaseService implements IDataService {
         });
       }
 
-      // Merge mock products so catalog is rich for first-time users
-      const mockProducts = await mockService.getNearbyProducts(userLocation, filters);
-      for (const mp of mockProducts) {
-        if (!result.some((p) => p.id === mp.id)) {
-          result.push(mp);
-        }
-      }
-
       return result.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
     } catch {
-      return mockService.getNearbyProducts(userLocation, filters);
+      return [];
     }
   }
 
@@ -619,9 +597,7 @@ export class SupabaseService implements IDataService {
       .eq('seller_id', currentDeviceId)
       .order('created_at', { ascending: false });
 
-    if (!data || data.length === 0) {
-      return mockService.getMyProducts();
-    }
+    if (!data) return [];
     return data.map((p) => ({
       ...this.mapProduct(p),
       isMyItem: true,
@@ -663,8 +639,8 @@ export class SupabaseService implements IDataService {
       }
 
       if (error || !data) {
-        console.warn('Supabase getForumPosts error, falling back to mock:', error);
-        return mockService.getForumPosts(filters);
+        console.warn('Supabase getForumPosts error:', error);
+        return [];
       }
 
       const now = Date.now();
@@ -696,7 +672,7 @@ export class SupabaseService implements IDataService {
       return posts;
     } catch (err) {
       console.warn('Supabase getForumPosts unexpected error:', err);
-      return mockService.getForumPosts(filters);
+      return [];
     }
   }
 
