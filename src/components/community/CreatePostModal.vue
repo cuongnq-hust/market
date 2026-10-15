@@ -4,10 +4,14 @@ import {
   X,
   Plus,
   Zap,
+  Upload,
+  Image as ImageIcon,
+  Loader2,
 } from 'lucide-vue-next';
 import { useForum } from '../../composables/useForum';
 import type { ForumPostType, ProductCategory, ProductPrice } from '../../types/database';
 import { CATEGORIES, HANOI_DISTRICTS } from '../../utils/constants';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -33,6 +37,8 @@ const form = reactive({
   ],
 });
 
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const isUploadingImage = ref(false);
 const customImageUrl = ref('');
 const isSubmitting = ref(false);
 
@@ -45,6 +51,32 @@ const presetImages = [
   { label: 'Sách truyện', url: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=700&q=80' },
 ];
 
+const triggerFileInput = () => {
+  fileInputRef.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
+
+  isUploadingImage.value = true;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // Compress client-side to lightweight JPEG DataURL
+      const compressedDataUrl = await compressImageFile(file, 1000, 0.8);
+      addImage(compressedDataUrl);
+    }
+  } catch (err) {
+    console.error('Lỗi nén ảnh:', err);
+  } finally {
+    isUploadingImage.value = false;
+    // Reset file input so user can choose same file again if needed
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+};
+
 const addImage = (url: string) => {
   if (url && !form.images.includes(url)) {
     form.images.push(url);
@@ -56,10 +88,16 @@ const removeImage = (idx: number) => {
 };
 
 const addCustomImage = () => {
-  if (customImageUrl.value.trim()) {
-    addImage(customImageUrl.value.trim());
-    customImageUrl.value = '';
+  let url = customImageUrl.value.trim();
+  if (!url) return;
+
+  // Auto add https:// if missing
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
+    url = 'https://' + url;
   }
+
+  addImage(url);
+  customImageUrl.value = '';
 };
 
 const handleSubmit = async () => {
@@ -282,41 +320,73 @@ const handleSubmit = async () => {
           </label>
         </div>
 
-        <!-- 7. Image Attachments with Quick Sample Presets -->
+        <!-- 7. Image Attachments with File Upload, Presets & URL -->
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">Hình ảnh đính kèm</label>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+              <ImageIcon class="w-4 h-4 text-orange-600" />
+              <span>Hình ảnh đính kèm ({{ form.images.length }} ảnh)</span>
+            </label>
+            <span class="text-[11px] text-gray-400">Chọn từ máy hoặc dán link</span>
+          </div>
+
+          <!-- Hidden native file input -->
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept="image/*"
+            multiple
+            class="hidden"
+            @change="handleFileUpload"
+          />
+
+          <!-- Upload Actions Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
+            <!-- 1. Upload from Computer/Phone button -->
+            <button
+              type="button"
+              @click="triggerFileInput"
+              :disabled="isUploadingImage"
+              class="w-full py-2.5 px-3 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 hover:border-orange-300 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <Loader2 v-if="isUploadingImage" class="w-4 h-4 animate-spin text-orange-600" />
+              <Upload v-else class="w-4 h-4 text-orange-600" />
+              <span>{{ isUploadingImage ? 'Đang nén & tải ảnh...' : 'Chọn ảnh từ máy / điện thoại' }}</span>
+            </button>
+
+            <!-- 2. Custom URL input with Enter key support -->
+            <div class="flex items-center gap-1.5">
+              <input
+                v-model="customImageUrl"
+                type="text"
+                placeholder="Dán link ảnh và bấm Enter..."
+                @keydown.enter.prevent="addCustomImage"
+                class="flex-1 px-3 py-2 text-xs border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+              />
+              <button
+                type="button"
+                @click="addCustomImage"
+                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition shrink-0"
+              >
+                Thêm
+              </button>
+            </div>
+          </div>
 
           <!-- Preset demo images -->
           <div class="mb-2">
-            <span class="text-[11px] text-gray-400 block mb-1">Chọn nhanh ảnh mẫu minh họa:</span>
+            <span class="text-[11px] text-gray-400 block mb-1">Hoặc chọn nhanh ảnh mẫu có sẵn:</span>
             <div class="flex flex-wrap gap-1.5">
               <button
                 v-for="preset in presetImages"
                 :key="preset.label"
                 type="button"
                 @click="addImage(preset.url)"
-                class="text-[11px] px-2 py-0.5 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-orange-700 text-gray-600 transition font-medium"
+                class="text-[11px] px-2 py-1 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-orange-700 text-gray-600 transition font-medium"
               >
                 + {{ preset.label }}
               </button>
             </div>
-          </div>
-
-          <!-- Custom URL input -->
-          <div class="flex items-center gap-2 mb-2">
-            <input
-              v-model="customImageUrl"
-              type="url"
-              placeholder="Hoặc dán URL hình ảnh trực tiếp..."
-              class="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
-            />
-            <button
-              type="button"
-              @click="addCustomImage"
-              class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition"
-            >
-              Thêm ảnh
-            </button>
           </div>
 
           <!-- Images Preview Thumbnails -->
@@ -324,15 +394,17 @@ const handleSubmit = async () => {
             <div
               v-for="(img, idx) in form.images"
               :key="idx"
-              class="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200 group shrink-0"
+              class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-gray-200 group shrink-0 shadow-xs"
             >
               <img :src="img" alt="Preview" class="w-full h-full object-cover" />
               <button
                 type="button"
                 @click="removeImage(idx)"
-                class="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                class="absolute inset-0 bg-black/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                title="Xóa ảnh này"
               >
-                <X class="w-4 h-4" />
+                <X class="w-5 h-5 text-red-400" />
+                <span class="text-[9px] font-bold mt-0.5">Xóa</span>
               </button>
             </div>
           </div>

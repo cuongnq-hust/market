@@ -93,7 +93,7 @@ export class SupabaseService implements IDataService {
       price = 'free';
     }
 
-    const authorUser = row.author;
+    const authorUser = row.users || row.author;
 
     return {
       id: row.id,
@@ -572,7 +572,7 @@ export class SupabaseService implements IDataService {
     try {
       let query = this.client
         .from('forum_posts')
-        .select('*, author:users(*)')
+        .select('*, users(*)')
         .eq('type', filters.postType)
         .order('created_at', { ascending: false });
 
@@ -583,7 +583,18 @@ export class SupabaseService implements IDataService {
         query = query.eq('category', filters.category);
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+      if (error) {
+        console.warn('Supabase getForumPosts join warning, retrying with flat select(*):', error);
+        const fallbackRes = await this.client
+          .from('forum_posts')
+          .select('*')
+          .eq('type', filters.postType)
+          .order('created_at', { ascending: false });
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
+
       if (error || !data) {
         console.warn('Supabase getForumPosts error, falling back to mock:', error);
         return mockService.getForumPosts(filters);
@@ -602,7 +613,8 @@ export class SupabaseService implements IDataService {
       }
 
       return posts;
-    } catch {
+    } catch (err) {
+      console.warn('Supabase getForumPosts unexpected error:', err);
       return mockService.getForumPosts(filters);
     }
   }
@@ -613,7 +625,7 @@ export class SupabaseService implements IDataService {
     }
     const { data, error } = await this.client
       .from('forum_posts')
-      .select('*, author:users(*)')
+      .select('*, users(*)')
       .eq('id', id)
       .maybeSingle();
     if (error || !data) return null;
@@ -634,14 +646,18 @@ export class SupabaseService implements IDataService {
         authorId = crypto.randomUUID();
       }
 
-      await this.client.from('users').upsert({
-        id: authorId,
-        name: postData.author.name || 'Người dùng Pass Đồ',
-        phone: postData.author.phone || '0901234567',
-        email: `${authorId.slice(0, 8)}@passdo.local`,
-        role: postData.author.role || 'both',
-        avatar: postData.author.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      });
+      try {
+        await this.client.from('users').upsert({
+          id: authorId,
+          name: postData.author.name || 'Người dùng Pass Đồ',
+          phone: postData.author.phone || '0901234567',
+          email: `${authorId.slice(0, 8)}@passdo.local`,
+          role: postData.author.role || 'both',
+          avatar: postData.author.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        });
+      } catch (uErr) {
+        console.warn('Upsert user warning (ignored):', uErr);
+      }
 
       let priceType: 'fixed' | 'negotiable' | 'free' = 'negotiable';
       let priceAmount: number | null = null;
@@ -669,11 +685,19 @@ export class SupabaseService implements IDataService {
           likes_count: 0,
           comments_count: 0,
         })
-        .select('*, author:users(*)')
+        .select()
         .single();
 
-      if (error || !data) throw error;
-      return this.mapForumPost(data);
+      if (error || !data) {
+        console.error('Supabase createForumPost error:', error);
+        throw error;
+      }
+
+      console.log('✅ Created forum post in Supabase:', data.id);
+      return {
+        ...this.mapForumPost(data),
+        author: postData.author,
+      };
     } catch (err) {
       console.warn('Supabase createForumPost error, falling back to mock:', err);
       return mockService.createForumPost(postData);

@@ -173,3 +173,13 @@ BEGIN
     ORDER BY distance_km ASC;
 END;
 $$ LANGUAGE plpgsql STABLE;
+
+-- ==============================================================================
+-- 9. PERMISSIONS / ROW LEVEL SECURITY (RLS) FOR PUBLIC APP ACCESS
+-- ==============================================================================
+-- Cho phép đọc/ghi công khai cho ứng dụng chợ đồ cũ (không yêu cầu đăng nhập phức tạp)
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seller_profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_posts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_comments DISABLE ROW LEVEL SECURITY;

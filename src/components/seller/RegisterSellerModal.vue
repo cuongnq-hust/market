@@ -6,11 +6,15 @@ import {
   User,
   Plus,
   Navigation,
+  Upload,
+  Image as ImageIcon,
+  Loader2,
 } from 'lucide-vue-next';
 import { useNearbyFilter } from '../../composables/useNearbyFilter';
 import { useGeolocation } from '../../composables/useGeolocation';
 import type { ProductCategory, ProductCondition, ProductPrice, SellerType } from '../../types/database';
 import { CATEGORIES } from '../../utils/constants';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -39,6 +43,8 @@ const form = reactive({
   ],
 });
 
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const isUploadingImage = ref(false);
 const customImageUrl = ref('');
 const isSubmitting = ref(false);
 
@@ -49,6 +55,30 @@ const presetImages = [
   { label: 'Xe đạp / Xe cộ', url: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80' },
   { label: 'Ve chai / Phế liệu', url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80' },
 ];
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (!files || files.length === 0) return;
+
+  isUploadingImage.value = true;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const compressedDataUrl = await compressImageFile(file, 1000, 0.8);
+      addImage(compressedDataUrl);
+    }
+  } catch (err) {
+    console.error('Lỗi nén ảnh:', err);
+  } finally {
+    isUploadingImage.value = false;
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+};
 
 const addImage = (url: string) => {
   if (url && !form.images.includes(url)) {
@@ -61,10 +91,15 @@ const removeImage = (idx: number) => {
 };
 
 const addCustomImage = () => {
-  if (customImageUrl.value.trim()) {
-    addImage(customImageUrl.value.trim());
-    customImageUrl.value = '';
+  let url = customImageUrl.value.trim();
+  if (!url) return;
+
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
+    url = 'https://' + url;
   }
+
+  addImage(url);
+  customImageUrl.value = '';
 };
 
 const useCurrentGpsLocation = () => {
@@ -335,50 +370,87 @@ const handleSubmit = async () => {
             </div>
           </div>
 
-          <!-- Image Selection with Presets -->
+          <!-- Image Selection with File Upload, Presets & URL -->
           <div>
-            <span class="text-[11px] font-bold text-gray-600 block mb-1">Ảnh món đồ (Chọn nhanh ảnh minh họa):</span>
-            <div class="flex flex-wrap gap-1.5 mb-2">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold text-gray-700 flex items-center gap-1.5">
+                <ImageIcon class="w-3.5 h-3.5 text-brand-600" />
+                <span>Ảnh món đồ ({{ form.images.length }} ảnh)</span>
+              </span>
+              <span class="text-[10px] text-gray-400">Chọn từ máy hoặc dán link</span>
+            </div>
+
+            <!-- Hidden native file input -->
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              multiple
+              class="hidden"
+              @change="handleFileUpload"
+            />
+
+            <!-- Upload Actions Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
+              <!-- Upload from Computer/Phone -->
+              <button
+                type="button"
+                @click="triggerFileInput"
+                :disabled="isUploadingImage"
+                class="w-full py-2 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 hover:border-brand-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Loader2 v-if="isUploadingImage" class="w-3.5 h-3.5 animate-spin text-brand-600" />
+                <Upload v-else class="w-3.5 h-3.5 text-brand-600" />
+                <span>{{ isUploadingImage ? 'Đang nén ảnh...' : 'Chọn ảnh từ máy / điện thoại' }}</span>
+              </button>
+
+              <!-- Custom URL input -->
+              <div class="flex items-center gap-1">
+                <input
+                  v-model="customImageUrl"
+                  type="text"
+                  placeholder="Dán link ảnh và Enter..."
+                  @keydown.enter.prevent="addCustomImage"
+                  class="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-xl bg-white outline-none focus:ring-1 focus:ring-brand-500"
+                />
+                <button
+                  type="button"
+                  @click="addCustomImage"
+                  class="px-2.5 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-xl transition"
+                >
+                  Thêm
+                </button>
+              </div>
+            </div>
+
+            <!-- Presets -->
+            <div class="flex flex-wrap gap-1 mb-2">
               <button
                 v-for="preset in presetImages"
                 :key="preset.label"
                 type="button"
                 @click="addImage(preset.url)"
-                class="text-[11px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 hover:border-brand-400 hover:text-brand-700 text-gray-600 font-medium transition"
+                class="text-[10px] px-2 py-0.5 rounded-lg bg-white border border-gray-200 hover:border-brand-400 hover:text-brand-700 text-gray-600 font-medium transition"
               >
                 + {{ preset.label }}
               </button>
             </div>
 
-            <div class="flex items-center gap-2 mb-2">
-              <input
-                v-model="customImageUrl"
-                type="url"
-                placeholder="Dán URL ảnh khác..."
-                class="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white outline-none"
-              />
-              <button
-                type="button"
-                @click="addCustomImage"
-                class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-lg"
-              >
-                Thêm
-              </button>
-            </div>
-
+            <!-- Preview Thumbnails -->
             <div v-if="form.images.length > 0" class="flex flex-wrap gap-2 pt-1">
               <div
                 v-for="(img, idx) in form.images"
                 :key="idx"
-                class="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 group shrink-0"
+                class="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 group shrink-0 shadow-xs"
               >
                 <img :src="img" alt="Product" class="w-full h-full object-cover" />
                 <button
                   type="button"
                   @click="removeImage(idx)"
-                  class="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                  class="absolute inset-0 bg-black/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition"
                 >
-                  <X class="w-3.5 h-3.5" />
+                  <X class="w-4 h-4 text-red-400" />
+                  <span class="text-[8px] font-bold">Xóa</span>
                 </button>
               </div>
             </div>
