@@ -78,19 +78,19 @@ onMounted(() => {
       </div>
 
       <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
+      <div class="px-6 py-4 border-b border-blue-100 flex items-center justify-between bg-gradient-to-r from-blue-50/80 to-white">
         <div>
-          <h2 class="text-lg font-black text-gray-900 leading-tight flex items-center gap-2">
+          <h2 class="text-lg font-black text-slate-900 leading-tight flex items-center gap-2">
             <span>📦 Quản Lý Tin Đăng Của Người Bán</span>
           </h2>
-          <p class="text-xs text-gray-500 mt-0.5">
+          <p class="text-xs text-slate-500 mt-0.5">
             Người bán đơn lẻ sau khi bán xong bấm "Đã bán" để hệ thống tự động ẩn khỏi bản đồ
           </p>
         </div>
 
         <button
           @click="$emit('close')"
-          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition active:scale-90"
+          class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition active:scale-90 cursor-pointer"
         >
           <X class="w-4 h-4" />
         </button>
@@ -99,20 +99,20 @@ onMounted(() => {
       <!-- Content Body -->
       <div class="p-6 overflow-y-auto flex-1 space-y-4 text-xs sm:text-sm">
         <!-- Loading -->
-        <div v-if="isLoading" class="py-12 text-center text-gray-400">
+        <div v-if="isLoading" class="py-12 text-center text-slate-400">
           Đang tải danh sách đồ thanh lý...
         </div>
 
         <!-- Empty state -->
-        <div v-else-if="myProducts.length === 0" class="py-12 text-center bg-gray-50 rounded-2xl border border-gray-200 p-6 space-y-3">
-          <Package class="w-12 h-12 text-gray-300 mx-auto" />
-          <h3 class="font-bold text-gray-800 text-sm">Bạn chưa có món đồ thanh lý nào</h3>
-          <p class="text-xs text-gray-500 max-w-sm mx-auto">
+        <div v-else-if="myProducts.length === 0" class="py-12 text-center bg-blue-50/30 rounded-2xl border border-blue-100 p-6 space-y-3">
+          <Package class="w-12 h-12 text-blue-300 mx-auto" />
+          <h3 class="font-bold text-slate-800 text-sm">Bạn chưa có món đồ thanh lý nào</h3>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto">
             Hãy đăng ký một điểm bán cá nhân hoặc đăng món đồ cũ cần pass dọn nhà để người gần bạn tìm thấy!
           </p>
           <button
             @click="openRegisterModal"
-            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-xs transition"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
           >
             <Plus class="w-4 h-4" />
             <span>Đăng món đồ đầu tiên</span>

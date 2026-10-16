@@ -8,9 +8,26 @@ export async function compressImageFile(
   maxWidth = 1000,
   quality = 0.8
 ): Promise<string> {
+  // Validate file type
+  if (!file.type || !file.type.startsWith('image/')) {
+    throw new Error('Định dạng tệp không hợp lệ. Vui lòng chọn tệp hình ảnh (JPEG, PNG, WebP).');
+  }
+
+  // Reject files exceeding 10MB to prevent memory exhaustion
+  const MAX_RAW_SIZE = 10 * 1024 * 1024; // 10MB
+  if (file.size > MAX_RAW_SIZE) {
+    throw new Error('Kích thước ảnh quá lớn (tối đa 10MB). Vui lòng chọn ảnh nhẹ hơn.');
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
+      const dataString = event.target?.result as string;
+      if (!dataString) {
+        reject(new Error('Không thể đọc dữ liệu tệp ảnh.'));
+        return;
+      }
+
       const img = new Image();
       img.onload = () => {
         let width = img.width;
@@ -27,7 +44,7 @@ export async function compressImageFile(
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          resolve(event.target?.result as string);
+          resolve(dataString);
           return;
         }
 
@@ -36,10 +53,10 @@ export async function compressImageFile(
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(dataUrl);
       };
-      img.onerror = () => resolve(event.target?.result as string);
-      img.src = event.target?.result as string;
+      img.onerror = () => reject(new Error('Không thể xử lý dữ liệu tệp ảnh.'));
+      img.src = dataString;
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Lỗi khi đọc tệp ảnh từ thiết bị.'));
     reader.readAsDataURL(file);
   });
 }

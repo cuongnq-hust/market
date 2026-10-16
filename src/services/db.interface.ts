@@ -9,6 +9,7 @@ import type {
   SellerProfile,
   SellerWithDistance,
   User,
+  PaginationParams,
 } from '../types/database';
 
 export interface IDataService {
@@ -43,7 +44,10 @@ export interface IDataService {
   getMyProducts(): Promise<Product[]>;
 
   // Phase 2: Community Forum Hub
-  getForumPosts(filters: ForumFilterState): Promise<ForumPost[]>;
+  getForumPosts(
+    filters: ForumFilterState,
+    pagination?: PaginationParams
+  ): Promise<ForumPost[]>;
   getForumPostById(id: string): Promise<ForumPost | null>;
   createForumPost(
     postData: Omit<ForumPost, 'id' | 'createdAt' | 'likesCount' | 'commentsCount'>

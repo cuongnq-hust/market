@@ -80,12 +80,19 @@ CREATE TABLE IF NOT EXISTS public.forum_posts (
     is_urgent BOOLEAN NOT NULL DEFAULT false,
     likes_count INTEGER NOT NULL DEFAULT 0,
     comments_count INTEGER NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'sold')),
+    expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Migration nếu bảng forum_posts đã tồn tại từ trước:
+ALTER TABLE public.forum_posts ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'sold'));
+ALTER TABLE public.forum_posts ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
 
 CREATE INDEX IF NOT EXISTS idx_forum_posts_type ON public.forum_posts(type);
 CREATE INDEX IF NOT EXISTS idx_forum_posts_district ON public.forum_posts(district);
 CREATE INDEX IF NOT EXISTS idx_forum_posts_category ON public.forum_posts(category);
+CREATE INDEX IF NOT EXISTS idx_forum_posts_status ON public.forum_posts(status);
 CREATE INDEX IF NOT EXISTS idx_forum_posts_created_at ON public.forum_posts(created_at DESC);
 
 -- 6. Create Forum Comments & Price Offers Table
@@ -175,19 +182,111 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 -- ==============================================================================
--- 9. PERMISSIONS / ROW LEVEL SECURITY (RLS) FOR PUBLIC APP ACCESS
+-- 9. PERMISSIONS / ROW LEVEL SECURITY (RLS) FOR SECURE APP ACCESS
 -- ==============================================================================
--- Cho phép đọc/ghi công khai cho ứng dụng chợ đồ cũ (không yêu cầu đăng nhập phức tạp)
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.seller_profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.forum_posts DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.forum_comments DISABLE ROW LEVEL SECURITY;
+-- Kích hoạt Row Level Security (RLS) trên toàn bộ các bảng nhằm ngăn chặn tấn công
+-- xóa hàng loạt (bulk delete), can thiệp trái phép, hay rò rỉ dữ liệu ngoài ý muốn.
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seller_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_comments ENABLE ROW LEVEL SECURITY;
 
-GRANT ALL ON public.users TO anon, authenticated, service_role;
-GRANT ALL ON public.seller_profiles TO anon, authenticated, service_role;
-GRANT ALL ON public.products TO anon, authenticated, service_role;
-GRANT ALL ON public.forum_posts TO anon, authenticated, service_role;
-GRANT ALL ON public.forum_comments TO anon, authenticated, service_role;
+-- Cấp quyền tối thiểu (Least Privilege) cho anon và authenticated:
+-- Tuyệt đối không GRANT DELETE tự do trên các bảng hệ thống
+GRANT SELECT, INSERT, UPDATE ON public.users TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.seller_profiles TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.products TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.forum_posts TO anon, authenticated;
+GRANT SELECT, INSERT ON public.forum_comments TO anon, authenticated;
+
+-- Service role giữ toàn quyền quản trị
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+
+-- --- POLICIES CHO BẢNG USERS ---
+DROP POLICY IF EXISTS "Public can view users" ON public.users;
+CREATE POLICY "Public can view users" ON public.users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow user registration and upsert" ON public.users;
+CREATE POLICY "Allow user registration and upsert" ON public.users FOR INSERT WITH CHECK (id IS NOT NULL);
+
+DROP POLICY IF EXISTS "Allow user update self" ON public.users;
+CREATE POLICY "Allow user update self" ON public.users FOR UPDATE USING (id IS NOT NULL);
+
+-- --- POLICIES CHO BẢNG SELLER_PROFILES ---
+DROP POLICY IF EXISTS "Public can view seller profiles" ON public.seller_profiles;
+CREATE POLICY "Public can view seller profiles" ON public.seller_profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert seller profile" ON public.seller_profiles;
+CREATE POLICY "Allow insert seller profile" ON public.seller_profiles FOR INSERT WITH CHECK (user_id IS NOT NULL AND latitude IS NOT NULL AND longitude IS NOT NULL);
+
+DROP POLICY IF EXISTS "Allow update seller profile" ON public.seller_profiles;
+CREATE POLICY "Allow update seller profile" ON public.seller_profiles FOR UPDATE USING (user_id IS NOT NULL);
+
+-- --- POLICIES CHO BẢNG PRODUCTS ---
+DROP POLICY IF EXISTS "Public can view products" ON public.products;
+CREATE POLICY "Public can view products" ON public.products FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert product" ON public.products;
+CREATE POLICY "Allow insert product" ON public.products FOR INSERT WITH CHECK (seller_id IS NOT NULL AND title IS NOT NULL AND length(trim(title)) > 0);
+
+DROP POLICY IF EXISTS "Allow update product status" ON public.products;
+CREATE POLICY "Allow update product status" ON public.products FOR UPDATE USING (id IS NOT NULL);
+
+-- --- POLICIES CHO BẢNG FORUM_POSTS ---
+DROP POLICY IF EXISTS "Public can view forum posts" ON public.forum_posts;
+CREATE POLICY "Public can view forum posts" ON public.forum_posts FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert forum post" ON public.forum_posts;
+CREATE POLICY "Allow insert forum post" ON public.forum_posts FOR INSERT WITH CHECK (author_id IS NOT NULL AND title IS NOT NULL AND length(trim(title)) > 0);
+
+DROP POLICY IF EXISTS "Allow update forum post status" ON public.forum_posts;
+CREATE POLICY "Allow update forum post status" ON public.forum_posts FOR UPDATE USING (id IS NOT NULL);
+
+DROP POLICY IF EXISTS "Allow delete individual forum post" ON public.forum_posts;
+CREATE POLICY "Allow delete individual forum post" ON public.forum_posts FOR DELETE USING (id IS NOT NULL);
+
+-- --- POLICIES CHO BẢNG FORUM_COMMENTS ---
+DROP POLICY IF EXISTS "Public can view comments" ON public.forum_comments;
+CREATE POLICY "Public can view comments" ON public.forum_comments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow insert comment" ON public.forum_comments;
+CREATE POLICY "Allow insert comment" ON public.forum_comments FOR INSERT WITH CHECK (post_id IS NOT NULL AND content IS NOT NULL AND length(trim(content)) > 0);
+
+-- ==============================================================================
+-- 10. REALTIME CONFIGURATION (ĐỒNG BỘ TỨC THÌ GIỮA CÁC THIẾT BỊ KHÔNG CẦN F5)
+-- ==============================================================================
+-- Kích hoạt Realtime (Postgres Changes qua WebSocket) cho các bảng
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'seller_profiles'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.seller_profiles;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'products'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'forum_posts'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.forum_posts;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'forum_comments'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.forum_comments;
+    END IF;
+END $$;
+
 
 

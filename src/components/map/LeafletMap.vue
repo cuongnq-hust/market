@@ -5,6 +5,7 @@ import type { SellerWithDistance } from '../../types/database';
 import { useGeolocation } from '../../composables/useGeolocation';
 import { useNearbyFilter } from '../../composables/useNearbyFilter';
 import { formatDistance } from '../../utils/geo';
+import { escapeHtml } from '../../utils/formatters';
 import { CATEGORIES } from '../../utils/constants';
 
 const emit = defineEmits<{
@@ -209,7 +210,8 @@ const updateSellerMarkers = () => {
       .slice(0, 3)
       .map((catKey) => {
         const catMeta = CATEGORIES.find((c) => c.key === catKey);
-        return `<span class="inline-block text-[10px] px-2 py-0.5 rounded-full ${catMeta?.badgeBg || 'bg-gray-100'} ${catMeta?.badgeText || 'text-gray-700'} font-medium mr-1">${catMeta?.label || catKey}</span>`;
+        const label = escapeHtml(catMeta?.label || catKey);
+        return `<span class="inline-block text-[10px] px-2 py-0.5 rounded-full ${catMeta?.badgeBg || 'bg-gray-100'} ${catMeta?.badgeText || 'text-gray-700'} font-medium mr-1">${label}</span>`;
       })
       .join('');
 
@@ -220,42 +222,42 @@ const updateSellerMarkers = () => {
         <div class="p-3.5 ${
           isIndividual
             ? 'bg-gradient-to-r from-purple-50 via-pink-50 to-white border-b border-purple-100'
-            : 'bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100'
+            : 'bg-gradient-to-r from-blue-50 via-sky-50 to-white border-b border-blue-100'
         }">
           <div class="flex items-start justify-between gap-1.5">
             <div>
               <span class="inline-block text-[9px] font-black px-1.5 py-0.2 rounded uppercase tracking-wider mb-1 ${
-                isIndividual ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'
+                isIndividual ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
               }">
                 ${isIndividual ? '👤 Cá nhân pass đồ' : '🏪 Vựa thu mua'}
               </span>
-              <h3 class="font-bold text-gray-900 text-sm leading-snug">${seller.shopName}</h3>
+              <h3 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(seller.shopName)}</h3>
             </div>
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
-              seller.isOpenNow ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'
+              seller.isOpenNow ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
             }">
               ${seller.isOpenNow ? '● Mở' : '○ Đóng'}
             </span>
           </div>
 
-          <p class="text-xs text-brand-700 font-semibold mt-1 flex items-center gap-1">
+          <p class="text-xs text-blue-700 font-semibold mt-1 flex items-center gap-1">
             📍 Cách bạn ${formatDistance(seller.distanceKm)}
           </p>
         </div>
 
         <!-- Body -->
-        <div class="p-3.5 space-y-2 text-xs text-gray-600">
-          <p class="text-[11px] text-gray-500 line-clamp-1">
-            ${seller.address}
+        <div class="p-3.5 space-y-2 text-xs text-slate-600">
+          <p class="text-[11px] text-slate-500 line-clamp-1">
+            ${escapeHtml(seller.address)}
           </p>
 
           <div>
-            <div class="text-[10px] text-gray-400 mb-1">Mặt hàng:</div>
+            <div class="text-[10px] text-slate-400 mb-1">Mặt hàng:</div>
             <div class="flex flex-wrap gap-y-1">${categoryBadgesHtml}</div>
           </div>
 
-          <p class="text-[11px] text-gray-500 line-clamp-2 italic pt-1 border-t border-gray-100">
-            "${seller.description || 'Điểm thanh lý đồ cũ.'}"
+          <p class="text-[11px] text-slate-500 line-clamp-2 italic pt-1 border-t border-blue-50">
+            "${escapeHtml(seller.description || 'Điểm thanh lý đồ cũ.')}"
           </p>
 
           ${
@@ -266,20 +268,20 @@ const updateSellerMarkers = () => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="p-3 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+        <div class="p-3 bg-blue-50/30 border-t border-blue-100/70 flex items-center gap-2">
           <a
-            href="tel:${seller.phone || ''}"
-            class="flex-1 text-center py-2 px-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold text-xs transition active:scale-95 flex items-center justify-center gap-1"
+            href="tel:${escapeHtml(seller.phone || '')}"
+            class="flex-1 text-center py-2 px-2.5 rounded-lg bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold text-xs transition active:scale-95 flex items-center justify-center gap-1"
           >
             📞 Gọi điện
           </a>
           <button
             type="button"
             data-action="view-inventory"
-            data-seller-id="${seller.userId}"
+            data-seller-id="${escapeHtml(seller.userId)}"
             class="flex-1 text-center py-2 px-2.5 rounded-lg ${
-              isIndividual ? 'bg-purple-600 hover:bg-purple-700' : 'bg-orange-600 hover:bg-orange-700'
-            } text-white font-semibold text-xs shadow-xs transition active:scale-95"
+              isIndividual ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'
+            } text-white font-semibold text-xs shadow-xs transition active:scale-95 cursor-pointer"
           >
             📦 Kho đồ (${seller.productsCount || 0})
           </button>

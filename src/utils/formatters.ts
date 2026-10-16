@@ -94,3 +94,17 @@ export function formatRelativeTime(dateString: string): string {
     return 'Vừa xong';
   }
 }
+
+/**
+ * XSS prevention helper: Sanitize strings before inserting into raw HTML
+ */
+export function escapeHtml(str?: string | null): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+

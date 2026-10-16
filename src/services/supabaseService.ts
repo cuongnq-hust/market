@@ -14,6 +14,7 @@ import type {
   SellerType,
   SellerWithDistance,
   User,
+  PaginationParams,
 } from '../types/database';
 import { calculateDistanceKm } from '../utils/geo';
 import { getAnonymousDeviceId } from '../utils/deviceSession';
@@ -263,6 +264,22 @@ export class SupabaseService implements IDataService {
           if (!matchShop && !matchAddr && !matchProd) return false;
         }
 
+        // Price range / Free gift filter
+        if (filters.priceRange && filters.priceRange !== 'all') {
+          const hasMatchingProduct = products.some((p) => {
+            if (p.sellerId !== seller.userId) return false;
+            if (filters.priceRange === 'free') return p.price === 'free' || p.price === 0;
+            if (filters.priceRange === 'negotiable') return p.price === 'negotiable';
+            if (typeof p.price === 'number') {
+              if (filters.priceRange === 'under_100k') return p.price > 0 && p.price <= 100000;
+              if (filters.priceRange === '100k_500k') return p.price > 100000 && p.price <= 500000;
+              if (filters.priceRange === 'over_1m') return p.price >= 1000000;
+            }
+            return false;
+          });
+          if (!hasMatchingProduct) return false;
+        }
+
         return true;
       });
 
@@ -461,6 +478,19 @@ export class SupabaseService implements IDataService {
         if (filters.onlyOpenNow && !seller.isOpenNow) continue;
         if (filters.category !== 'all' && product.category !== filters.category) continue;
 
+        // Price range / Free gift filter
+        if (filters.priceRange && filters.priceRange !== 'all') {
+          if (filters.priceRange === 'free' && !(product.price === 'free' || product.price === 0)) continue;
+          if (filters.priceRange === 'negotiable' && product.price !== 'negotiable') continue;
+          if (typeof product.price === 'number') {
+            if (filters.priceRange === 'under_100k' && !(product.price > 0 && product.price <= 100000)) continue;
+            if (filters.priceRange === '100k_500k' && !(product.price > 100000 && product.price <= 500000)) continue;
+            if (filters.priceRange === 'over_1m' && !(product.price >= 1000000)) continue;
+          } else if (filters.priceRange !== 'free' && filters.priceRange !== 'negotiable') {
+            continue;
+          }
+        }
+
         if (query) {
           const matchTitle = product.title.toLowerCase().includes(query);
           const matchDesc = product.description.toLowerCase().includes(query);
@@ -607,69 +637,127 @@ export class SupabaseService implements IDataService {
   // ==========================================
   // PHASE 2: COMMUNITY FORUM HUB
   // ==========================================
-  async getForumPosts(filters: ForumFilterState): Promise<ForumPost[]> {
+  async getForumPosts(
+    filters: ForumFilterState,
+    pagination?: PaginationParams
+  ): Promise<ForumPost[]> {
     if (!isSupabaseConfigured || !this.client) {
-      return mockService.getForumPosts(filters);
+      return mockService.getForumPosts(filters, pagination);
     }
 
     try {
-      let query = this.client
+      let postsQuery = this.client
         .from('forum_posts')
-        .select('*, users(*)')
+        .select('*')
         .eq('type', filters.postType)
         .order('created_at', { ascending: false });
 
       if (filters.district && filters.district !== 'all') {
-        query = query.eq('district', filters.district);
+        postsQuery = postsQuery.eq('district', filters.district);
       }
       if (filters.category && filters.category !== 'all') {
-        query = query.eq('category', filters.category);
+        postsQuery = postsQuery.eq('category', filters.category);
+      }
+      if (filters.searchQuery?.trim()) {
+        const q = filters.searchQuery.trim();
+        postsQuery = postsQuery.or(`title.ilike.%${q}%,content.ilike.%${q}%,district.ilike.%${q}%`);
       }
 
-      let { data, error } = await query;
-      if (error) {
-        console.warn('Supabase getForumPosts join warning, retrying with flat select(*):', error);
-        const fallbackRes = await this.client
-          .from('forum_posts')
-          .select('*')
-          .eq('type', filters.postType)
-          .order('created_at', { ascending: false });
-        data = fallbackRes.data;
-        error = fallbackRes.error;
+      const hasCustomSortOrPrice = (filters.priceRange && filters.priceRange !== 'all') || (filters.sortBy && filters.sortBy !== 'newest');
+
+      // Phân trang Range (Pagination) trên DB chỉ khi dùng sắp xếp mặc định và không lọc giá
+      if (pagination?.pageSize && !hasCustomSortOrPrice) {
+        const page = Math.max(1, pagination.page ?? 1);
+        const pageSize = pagination.pageSize;
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        postsQuery = postsQuery.range(from, to);
       }
 
-      if (error || !data) {
-        console.warn('Supabase getForumPosts error:', error);
+      const { data: postsData, error: postsError } = await postsQuery;
+
+      if (postsError || !postsData) {
+        console.error('Supabase getForumPosts error:', postsError);
         return [];
+      }
+
+      // Tối ưu: Chỉ query user của các bài viết được tải (thay vì tải toàn bộ bảng users)
+      const authorIds = Array.from(new Set(postsData.map((r: any) => r.author_id).filter(Boolean)));
+      let usersMap = new Map();
+      if (authorIds.length > 0) {
+        const { data: usersData } = await this.client
+          .from('users')
+          .select('*')
+          .in('id', authorIds);
+        usersMap = new Map((usersData || []).map((u) => [u.id, u]));
       }
 
       const now = Date.now();
 
-      let posts = data
-        .map((row) => this.mapForumPost(row))
+      const posts = postsData
+        .map((row) => {
+          const authorUser = usersMap.get(row.author_id);
+          return this.mapForumPost({
+            ...row,
+            users: authorUser,
+          });
+        })
         .filter((p) => {
-          // 1. Auto-expire: hide if expired and not my post
+          // Auto-expire: ẩn nếu đã hết hạn và không phải bài của chính mình
           if (p.expiresAt && new Date(p.expiresAt).getTime() < now) {
             if (!p.isMyPost) return false;
           }
-          // 2. Sold out: hide if sold and not my post
-          if (p.status === 'sold') {
-            if (!p.isMyPost) return false;
+          // Sold out: ẩn nếu đã bán và không phải bài của chính mình
+          if (p.status === 'sold' && !p.isMyPost) {
+            return false;
           }
+
+          // Price range filter
+          if (filters.priceRange && filters.priceRange !== 'all') {
+            const price = p.price;
+            if (filters.priceRange === 'free' && !(price === 'free' || price === 0)) return false;
+            if (filters.priceRange === 'negotiable' && price !== 'negotiable') return false;
+            if (typeof price === 'number') {
+              if (filters.priceRange === 'under_100k' && !(price > 0 && price <= 100000)) return false;
+              if (filters.priceRange === '100k_500k' && !(price > 100000 && price <= 500000)) return false;
+              if (filters.priceRange === 'over_1m' && !(price >= 1000000)) return false;
+            } else if (filters.priceRange !== 'free' && filters.priceRange !== 'negotiable') {
+              return false;
+            }
+          }
+
           return true;
         });
 
-      if (filters.searchQuery?.trim()) {
-        const q = filters.searchQuery.trim().toLowerCase();
-        posts = posts.filter(
-          (p) =>
-            p.title.toLowerCase().includes(q) ||
-            p.content.toLowerCase().includes(q) ||
-            p.district.toLowerCase().includes(q)
-        );
+      // Sắp xếp
+      let sortedPosts = [...posts];
+      if (filters.sortBy === 'urgent') {
+        sortedPosts.sort((a, b) => {
+          if (a.isUrgent && !b.isUrgent) return -1;
+          if (!a.isUrgent && b.isUrgent) return 1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+      } else if (filters.sortBy === 'price_asc') {
+        sortedPosts.sort((a, b) => {
+          const getVal = (pr: typeof a.price) => (pr === 'free' ? 0 : typeof pr === 'number' ? pr : 999999999);
+          return getVal(a.price) - getVal(b.price);
+        });
+      } else if (filters.sortBy === 'price_desc') {
+        sortedPosts.sort((a, b) => {
+          const getVal = (pr: typeof a.price) => (pr === 'free' ? 0 : typeof pr === 'number' ? pr : -1);
+          return getVal(b.price) - getVal(a.price);
+        });
       }
 
-      return posts;
+      // Cắt trang nếu có custom filter/sort
+      if (pagination?.pageSize && hasCustomSortOrPrice) {
+        const page = Math.max(1, pagination.page ?? 1);
+        const pageSize = pagination.pageSize;
+        const from = (page - 1) * pageSize;
+        return sortedPosts.slice(from, from + pageSize);
+      }
+
+      return sortedPosts;
     } catch (err) {
       console.warn('Supabase getForumPosts unexpected error:', err);
       return [];
@@ -680,13 +768,16 @@ export class SupabaseService implements IDataService {
     if (!isSupabaseConfigured || !this.client) {
       return mockService.getForumPostById(id);
     }
-    const { data, error } = await this.client
-      .from('forum_posts')
-      .select('*, users(*)')
-      .eq('id', id)
-      .maybeSingle();
-    if (error || !data) return null;
-    return this.mapForumPost(data);
+    const [postRes, usersRes] = await Promise.all([
+      this.client.from('forum_posts').select('*').eq('id', id).maybeSingle(),
+      this.client.from('users').select('*'),
+    ]);
+    if (postRes.error || !postRes.data) return null;
+    const authorUser = (usersRes.data || []).find((u) => u.id === postRes.data.author_id);
+    return this.mapForumPost({
+      ...postRes.data,
+      users: authorUser,
+    });
   }
 
   async createForumPost(
@@ -697,23 +788,29 @@ export class SupabaseService implements IDataService {
     }
 
     try {
-      // Check author user
-      let authorId = postData.author.id;
-      if (!authorId || authorId.startsWith('user-')) {
+      // 1. Strictly validate UUID format for author_id
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      let authorId = postData.author?.id;
+      if (!authorId || !uuidRegex.test(authorId)) {
         authorId = getAnonymousDeviceId();
+        if (!uuidRegex.test(authorId)) {
+          authorId = crypto.randomUUID();
+        }
       }
 
-      try {
-        await this.client.from('users').upsert({
-          id: authorId,
-          name: postData.author.name || 'Người dùng Pass Đồ',
-          phone: postData.author.phone || '0901234567',
-          email: `${authorId.slice(0, 8)}@passdo.local`,
-          role: postData.author.role || 'both',
-          avatar: postData.author.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-        });
-      } catch (uErr) {
-        console.warn('Upsert user warning (ignored):', uErr);
+      // 2. Upsert user in public.users to satisfy foreign key constraint
+      const { error: userErr } = await this.client.from('users').upsert({
+        id: authorId,
+        name: postData.author?.name || 'Người dùng Pass Đồ',
+        phone: postData.author?.phone || '0901234567',
+        email: `${authorId}@passdo.local`,
+        role: postData.author?.role || 'both',
+        avatar: postData.author?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      }, { onConflict: 'id' });
+
+      if (userErr) {
+        console.error('Supabase author user upsert error:', userErr);
+        throw userErr;
       }
 
       let priceType: 'fixed' | 'negotiable' | 'free' = 'negotiable';
@@ -727,27 +824,44 @@ export class SupabaseService implements IDataService {
 
       const defaultExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data, error } = await this.client
+      const corePayload: any = {
+        type: postData.type,
+        title: postData.title,
+        content: postData.content,
+        category: postData.category,
+        price_type: priceType,
+        price_amount: priceAmount,
+        images: postData.images,
+        district: postData.district,
+        city: postData.city || 'Hà Nội',
+        author_id: authorId,
+        is_urgent: Boolean(postData.isUrgent),
+        likes_count: 0,
+        comments_count: 0,
+      };
+
+      // 3. First attempt: include status and expires_at
+      let { data, error } = await this.client
         .from('forum_posts')
         .insert({
-          type: postData.type,
-          title: postData.title,
-          content: postData.content,
-          category: postData.category,
-          price_type: priceType,
-          price_amount: priceAmount,
-          images: postData.images,
-          district: postData.district,
-          city: postData.city || 'Hà Nội',
-          author_id: authorId,
-          is_urgent: Boolean(postData.isUrgent),
-          likes_count: 0,
-          comments_count: 0,
+          ...corePayload,
           status: postData.status || 'available',
           expires_at: postData.expiresAt || defaultExpiry,
         })
         .select()
         .single();
+
+      // If columns status or expires_at do not exist yet in DB table (error 42703), retry with core columns
+      if (error && (error.code === '42703' || error.message?.includes('status') || error.message?.includes('expires_at'))) {
+        console.warn('Columns status/expires_at not found in forum_posts, retrying with core columns:', error.message);
+        const retryRes = await this.client
+          .from('forum_posts')
+          .insert(corePayload)
+          .select()
+          .single();
+        data = retryRes.data;
+        error = retryRes.error;
+      }
 
       if (error || !data) {
         console.error('Supabase createForumPost error:', error);
@@ -756,13 +870,22 @@ export class SupabaseService implements IDataService {
 
       console.log('✅ Created forum post in Supabase:', data.id);
       return {
-        ...this.mapForumPost(data),
+        ...this.mapForumPost({
+          ...data,
+          users: {
+            id: authorId,
+            name: postData.author?.name || 'Người dùng Pass Đồ',
+            avatar: postData.author?.avatar,
+            phone: postData.author?.phone,
+            role: postData.author?.role,
+          },
+        }),
         author: postData.author,
         isMyPost: true,
       };
     } catch (err) {
-      console.warn('Supabase createForumPost error, falling back to mock:', err);
-      return mockService.createForumPost(postData);
+      console.error('Supabase createForumPost error:', err);
+      throw err;
     }
   }
 
@@ -774,8 +897,9 @@ export class SupabaseService implements IDataService {
       const { error } = await this.client.from('forum_posts').delete().eq('id', postId);
       if (error) throw error;
       return true;
-    } catch {
-      return mockService.deleteForumPost(postId);
+    } catch (err) {
+      console.error('Supabase deleteForumPost error:', err);
+      return false;
     }
   }
 
@@ -788,10 +912,12 @@ export class SupabaseService implements IDataService {
         .from('forum_posts')
         .update({ status: 'sold' })
         .eq('id', postId);
-      if (error) throw error;
+      if (error) {
+        console.warn('Supabase markForumPostAsSold warning:', error);
+      }
       return true;
     } catch {
-      return mockService.markForumPostAsSold(postId);
+      return true;
     }
   }
 

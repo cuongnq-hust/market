@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tài Liệu Kỹ Thuật & Kịch Bản Kiểm Thử - Pass Đồ Gần Nhà</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --sky: #0ea5e9;
+      --indigo: #4f46e5;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --emerald: #10b981;
+      --emerald-light: #ecfdf5;
+      --amber: #f59e0b;
+      --amber-light: #fffbeb;
+      --rose: #f43f5e;
+      --rose-light: #fff1f2;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f5fa;
+      color: var(--slate-800);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 280px;
+      background: #ffffff;
+      border-right: 1px solid var(--slate-200);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 16px;
+      flex-shrink: 0;
+      display: flex;
+      flex-col;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--slate-100);
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--sky));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--slate-500);
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--slate-400);
+      margin: 12px 12px 6px;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate-600);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-link:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .nav-link.active {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 700;
+      border-left: 3px solid var(--primary);
+      border-radius: 4px 8px 8px 4px;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      padding: 40px 48px 80px;
+      max-width: 1160px;
+      overflow-x: hidden;
+    }
+
+    /* Header Banner */
+    .doc-header {
+      background: linear-gradient(135deg, #ffffff 0%, #edf4fc 100%);
+      border: 1px solid var(--primary-border);
+      border-radius: 20px;
+      padding: 32px 36px;
+      margin-bottom: 36px;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.04);
+      position: relative;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      margin-bottom: 12px;
+    }
+
+    .doc-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .doc-subtitle {
+      font-size: 14px;
+      color: var(--slate-600);
+      max-width: 780px;
+      line-height: 1.6;
+    }
+
+    .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(191, 219, 254, 0.4);
+      font-size: 12px;
+      color: var(--slate-500);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .meta-item strong {
+      color: var(--slate-800);
+    }
+
+    /* Section Styles */
+    section {
+      background: #ffffff;
+      border-radius: 20px;
+      border: 1px solid var(--slate-200);
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--slate-100);
+      margin-bottom: 24px;
+    }
+
+    .section-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .section-header h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    p {
+      color: var(--slate-600);
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 16px 0 24px;
+      border-radius: 12px;
+      border: 1px solid var(--slate-200);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    thead {
+      background: #f8fafc;
+      border-bottom: 2px solid var(--slate-200);
+    }
+
+    th {
+      padding: 12px 14px;
+      font-weight: 700;
+      color: var(--slate-700);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--slate-200);
+      color: var(--slate-700);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    /* Badges & Tags */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .badge-pk {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-fk {
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+
+    .badge-type {
+      background: #f1f5f9;
+      color: #334155;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .badge-check {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-pass {
+      background: #ecfdf5;
+      color: #047857;
+      font-weight: 700;
+    }
+
+    .badge-p1 {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .badge-p2 {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    /* Code blocks */
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 14px 0 20px;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #eff6ff;
+      color: var(--primary-dark);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .feature-card {
+      background: #f8fafc;
+      border: 1px solid var(--slate-200);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--primary-border);
+      background: #ffffff;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.06);
+    }
+
+    .feature-card h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card p {
+      font-size: 12px;
+      color: var(--slate-600);
+      margin-bottom: 0;
+    }
+
+    /* Callout Note */
+    .callout {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 16px 0;
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout-info {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      color: var(--slate-700);
+    }
+
+    .callout-success {
+      background: var(--emerald-light);
+      border-left: 4px solid var(--emerald);
+      color: #064e3b;
+    }
+
+    .callout-warning {
+      background: var(--amber-light);
+      border-left: 4px solid var(--amber);
+      color: #78350f;
+    }
+
+    /* Search & Filter Bar for Test cases */
+    .filter-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 14px;
+      border: 1px solid var(--slate-300);
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .filter-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .app-container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .main-content {
+        padding: 24px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">📦</div>
+      <div class="brand-text">
+        <h1>Pass Đồ Gần Nhà</h1>
+        <p>Tài liệu kỹ thuật v2.0</p>
+      </div>
+    </div>
+
+    <div class="nav-group-title">Mục Lục Tài Liệu</div>
+    <ul class="nav-links">
+      <li><a href="#overview" class="nav-link active"><span>📌</span> 1. Tổng quan dự án</a></li>
+      <li><a href="#architecture" class="nav-link"><span>🏛️</span> 2. Kiến trúc hệ thống</a></li>
+      <li><a href="#database" class="nav-link"><span>🗄️</span> 3. Bảng cơ sở dữ liệu</a></li>
+      <li><a href="#database-functions" class="nav-link"><span>⚡</span> 4. Hàm không gian GIS</a></li>
+      <li><a href="#realtime-rls" class="nav-link"><span>🔄</span> 5. Realtime & Quyền RLS</a></li>
+      <li><a href="#test-matrix" class="nav-link"><span>🧪</span> 6. Nghiệp vụ Test (QA Matrix)</a></li>
+      <li><a href="#test-scenarios" class="nav-link"><span>📋</span> 7. Kịch bản test chi tiết</a></li>
+      <li><a href="#edge-cases" class="nav-link"><span>⚠️</span> 8. Ca kiểm thử biên (Edge)</a></li>
+    </ul>
+
+    <div class="callout callout-info" style="margin-top: auto; padding: 12px; font-size: 11px;">
+      <div>
+        <strong>Phục vụ nghiệm thu</strong><br>
+        Bao gồm toàn bộ schema SQL, API đồng bộ và checklist 28 ca kiểm thử chức năng.
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- HEADER -->
+    <header class="doc-header">
+      <div class="badge-pill">✨ DỰ ÁN PASS ĐỒ GẦN NHÀ · HÀ NỘI · TECH SPEC & QA PLAN</div>
+      <h1 class="doc-title">Hồ Sơ Thiết Kế Kỹ Thuật, Cơ Sở Dữ Liệu & Kịch Bản Kiểm Thử</h1>
+      <p class="doc-subtitle">
+        Tài liệu kỹ thuật tổng hợp toàn diện dự án <strong>Pass Đồ Gần Nhà</strong>: Nền tảng kết nối thanh lý đồ cũ, dọn phòng trọ và vựa thu mua phế liệu theo vị trí địa lý, hỗ trợ đồng bộ dữ liệu thời gian thực (Realtime), Web App di động (PWA) và hệ thống kiểm duyệt cộng đồng không cần đăng nhập.
+      </p>
+
+      <div class="meta-tags">
+        <div class="meta-item"><span>📅</span> Ngày cập nhật: <strong>Tháng 10/2026</strong></div>
+        <div class="meta-item"><span>🚀</span> Phiên bản: <strong>Release 2.0 (Production-Ready)</strong></div>
+        <div class="meta-item"><span>⚡</span> Frontend: <strong>Vue 3 · TypeScript · Vite · Tailwind CSS</strong></div>
+        <div class="meta-item"><span>🗃️</span> Database: <strong>Supabase (PostgreSQL 15) · PostGIS</strong></div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: TỔNG QUAN DỰ ÁN -->
+    <section id="overview">
+      <div class="section-header">
+        <div class="section-icon">📌</div>
+        <h2>1. Tổng Quan Dự Án & Bài Toán Nghiệp Vụ</h2>
+      </div>
+
+      <p>
+        <strong>Pass Đồ Gần Nhà</strong> ra đời nhằm giải quyết triệt để sự đứt gãy thông tin giữa <strong>người dọn nhà/dọn phòng trọ</strong> cần thanh lý đồ cũ cồng kềnh gấp và <strong>vựa thu mua phế liệu/người cần mua đồ giá rẻ</strong> trong bán kính gần (1km - 20km).
+      </p>
+
+      <div class="cards-grid">
+        <div class="feature-card">
+          <h4><span>🎯</span> Bài toán thực tế</h4>
+          <p>Đồ cũ như bàn ghế, máy giặt, quạt, tủ lạnh, sách cũ khi dọn nhà vận chuyển xa rất tốn phí. Đăng lên sàn TMĐT hoặc nhóm Facebook thì quá xa và mất thời gian đóng gói ship.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span>💡</span> Giải pháp Hyperlocal</h4>
+          <p>Bản đồ số định vị thời gian thực, quét trong bán kính lân cận từ 1km đến 20km. Người mua có thể đi bộ hoặc chạy xe máy 5 phút qua xem đồ và chở về ngay.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span>⚡</span> Tối giản rào cản</h4>
+          <p>Không bắt buộc người dùng đăng ký tài khoản rườm rà. Định danh ẩn danh qua Device Session; kết nối trực tiếp 1 chạm qua Zalo và Gọi thoại.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span>🛡️</span> Tự động điều tiết</h4>
+          <p>Người bán cá nhân bán xong chỉ cần ấn "Đã bán" -> vị trí tự động ẩn khỏi bản đồ để tránh bị làm phiền. Tin xấu bị 3 người báo cáo sẽ tự động bị ẩn khỏi cộng đồng.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: KIẾN TRÚC HỆ THỐNG -->
+    <section id="architecture">
+      <div class="section-header">
+        <div class="section-icon">🏛️</div>
+        <h2>2. Kiến Trúc Hệ Thống (System Architecture)</h2>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tầng Kiến Trúc</th>
+              <th>Công Nghệ Sử Dụng</th>
+              <th>Vai Trò & Chức Năng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Frontend Shell</strong></td>
+              <td>Vue 3 (Composition API), Vite 5, TypeScript</td>
+              <td>SPA hiệu năng cao, phản hồi tương tác tức thì, kiểm soát type an toàn tuyệt đối qua <code>vue-tsc</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Styling & Theme</strong></td>
+              <td>Tailwind CSS, Plus Jakarta Sans, Lucide Icons</td>
+              <td>Giao diện <strong>Soft Blue Theme</strong> êm dịu, hài hòa, thân thiện với mắt người dùng khi lướt lâu; Responsive 100% Mobile & Desktop.</td>
+            </tr>
+            <tr>
+              <td><strong>Bản đồ số (GIS)</strong></td>
+              <td>Leaflet.js, OpenStreetMap Tiles</td>
+              <td>Hiển thị điểm bán, vựa thu mua, marker người mua draggable, vòng tròn quét bán kính tương tác động.</td>
+            </tr>
+            <tr>
+              <td><strong>Ứng dụng Di động</strong></td>
+              <td>Progressive Web App (PWA), Service Worker</td>
+              <td>Cung cấp <code>manifest.webmanifest</code>, cài đặt App 1-chạm trên Android và hướng dẫn trực quan trên iOS Safari. Cache shell tĩnh.</td>
+            </tr>
+            <tr>
+              <td><strong>Database & Storage</strong></td>
+              <td>Supabase (PostgreSQL 15), Supabase Storage</td>
+              <td>Lưu trữ dữ liệu bảng, chỉ mục bounding-box, nén ảnh client trước khi upload.</td>
+            </tr>
+            <tr>
+              <td><strong>Đồng bộ Realtime</strong></td>
+              <td>Supabase Realtime (PostgreSQL Changes WS)</td>
+              <td>Đồng bộ 2 màn hình tức thì qua WebSocket, hiển thị pill thông báo thông minh không giật trang, không cần F5.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: BẢNG CƠ SỞ DỮ LIỆU -->
+    <section id="database">
+      <div class="section-header">
+        <div class="section-icon">🗄️</div>
+        <h2>3. Thông Tin Chi Tiết Các Bảng Database (Data Dictionary)</h2>
+      </div>
+
+      <p>Hệ thống database được thiết kế chuẩn hóa trên <strong>PostgreSQL / Supabase</strong> gồm 5 bảng chính, có quan hệ ràng buộc khóa ngoại chặt chẽ và chỉ mục hiệu năng cao.</p>
+
+      <!-- TABLE 1: USERS -->
+      <h3>1. Bảng <code>public.users</code> (Người dùng & Thiết bị)</h3>
+      <p>Lưu trữ định danh người dùng (cả người đăng ký hoặc thiết bị ẩn danh device session).</p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên Cột</th>
+              <th>Kiểu Dữ Liệu</th>
+              <th>Khóa / Ràng Buộc</th>
+              <th>Ý Nghĩa Nghiệp Vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-pk">PRIMARY KEY</span> DEFAULT uuid_generate_v4()</td>
+              <td>Định danh duy nhất của người dùng hoặc Device ID.</td>
+            </tr>
+            <tr>
+              <td><code>name</code></td>
+              <td><span class="badge badge-type">VARCHAR(255)</span></td>
+              <td>NOT NULL</td>
+              <td>Tên hiển thị (Tên người bán / Tên chủ vựa / Biệt danh).</td>
+            </tr>
+            <tr>
+              <td><code>phone</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>NOT NULL</td>
+              <td>Số điện thoại liên hệ chính thức.</td>
+            </tr>
+            <tr>
+              <td><code>email</code></td>
+              <td><span class="badge badge-type">VARCHAR(255)</span></td>
+              <td>UNIQUE NOT NULL</td>
+              <td>Email định danh hoặc email giả lập sinh theo UUID.</td>
+            </tr>
+            <tr>
+              <td><code>role</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (role IN ('buyer', 'seller', 'both'))</td>
+              <td>Vai trò người dùng trong hệ sinh thái.</td>
+            </tr>
+            <tr>
+              <td><code>avatar</code></td>
+              <td><span class="badge badge-type">TEXT</span></td>
+              <td>NULLABLE</td>
+              <td>Đường dẫn URL ảnh đại diện hoặc avatar sinh tự động.</td>
+            </tr>
+            <tr>
+              <td><code>created_at</code></td>
+              <td><span class="badge badge-type">TIMESTAMPTZ</span></td>
+              <td>DEFAULT NOW()</td>
+              <td>Thời điểm khởi tạo tài khoản/thiết bị.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLE 2: SELLER PROFILES -->
+      <h3>2. Bảng <code>public.seller_profiles</code> (Hồ Sơ Điểm Bán / Vựa Thu Mua)</h3>
+      <p>Chứa tọa độ địa lý, thông tin cửa hàng hoặc cá nhân dọn phòng trọ ghim trên bản đồ.</p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên Cột</th>
+              <th>Kiểu Dữ Liệu</th>
+              <th>Khóa / Ràng Buộc</th>
+              <th>Ý Nghĩa Nghiệp Vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>user_id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-pk">PRIMARY KEY</span> <span class="badge badge-fk">FK users(id) ON DELETE CASCADE</span></td>
+              <td>Khóa ngoại nối trực tiếp đến bảng users.</td>
+            </tr>
+            <tr>
+              <td><code>shop_name</code></td>
+              <td><span class="badge badge-type">VARCHAR(255)</span></td>
+              <td>NOT NULL</td>
+              <td>Tên vựa thu mua hoặc tên điểm pass đồ cá nhân.</td>
+            </tr>
+            <tr>
+              <td><code>seller_type</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (seller_type IN ('store', 'individual'))</td>
+              <td><code>store</code>: Vựa phế liệu/Shop cố định; <code>individual</code>: Cá nhân pass đồ dọn nhà.</td>
+            </tr>
+            <tr>
+              <td><code>address</code></td>
+              <td><span class="badge badge-type">TEXT</span></td>
+              <td>NOT NULL</td>
+              <td>Địa chỉ hiển thị (ngõ ngách, số nhà, quận huyện).</td>
+            </tr>
+            <tr>
+              <td><code>latitude</code></td>
+              <td><span class="badge badge-type">DOUBLE PRECISION</span></td>
+              <td>NOT NULL</td>
+              <td>Vĩ độ GPS phục vụ tính khoảng cách và định vị Leaflet.</td>
+            </tr>
+            <tr>
+              <td><code>longitude</code></td>
+              <td><span class="badge badge-type">DOUBLE PRECISION</span></td>
+              <td>NOT NULL</td>
+              <td>Kinh độ GPS phục vụ tính khoảng cách và định vị Leaflet.</td>
+            </tr>
+            <tr>
+              <td><code>categories</code></td>
+              <td><span class="badge badge-type">TEXT[]</span></td>
+              <td>NOT NULL DEFAULT '{}'</td>
+              <td>Mảng danh mục thu mua/bán (electronics, scrap, furniture...).</td>
+            </tr>
+            <tr>
+              <td><code>open_time</code></td>
+              <td><span class="badge badge-type">VARCHAR(10)</span></td>
+              <td>DEFAULT '08:00'</td>
+              <td>Giờ mở cửa buổi sáng.</td>
+            </tr>
+            <tr>
+              <td><code>close_time</code></td>
+              <td><span class="badge badge-type">VARCHAR(10)</span></td>
+              <td>DEFAULT '21:00'</td>
+              <td>Giờ đóng cửa buổi tối.</td>
+            </tr>
+            <tr>
+              <td><code>is_open_now</code></td>
+              <td><span class="badge badge-type">BOOLEAN</span></td>
+              <td>DEFAULT true</td>
+              <td>Trạng thái đang mở cửa hay tạm nghỉ.</td>
+            </tr>
+            <tr>
+              <td><code>phone</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>NULLABLE</td>
+              <td>Số điện thoại liên hệ nhanh.</td>
+            </tr>
+            <tr>
+              <td><code>zalo</code></td>
+              <td><span class="badge badge-type">VARCHAR(50)</span></td>
+              <td>NULLABLE</td>
+              <td>Số Zalo để mở chat nhắn tin mẫu 1 chạm.</td>
+            </tr>
+            <tr>
+              <td><code>is_sold_out</code></td>
+              <td><span class="badge badge-type">BOOLEAN</span></td>
+              <td>DEFAULT false</td>
+              <td><strong>Cờ quan trọng:</strong> Nếu người bán cá nhân đã bán hết đồ -> <code>true</code> -> tự động ẩn khỏi bản đồ.</td>
+            </tr>
+            <tr>
+              <td><code>is_verified</code></td>
+              <td><span class="badge badge-type">BOOLEAN</span></td>
+              <td>DEFAULT false</td>
+              <td>Huy hiệu điểm bán uy tín đã được xác thực.</td>
+            </tr>
+            <tr>
+              <td><code>rating</code></td>
+              <td><span class="badge badge-type">NUMERIC(3,2)</span></td>
+              <td>DEFAULT 5.0</td>
+              <td>Điểm đánh giá uy tín từ 1.0 đến 5.0 sao.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLE 3: PRODUCTS -->
+      <h3>3. Bảng <code>public.products</code> (Kho Hàng Đang Thanh Lý)</h3>
+      <p>Lưu trữ từng món đồ thanh lý thuộc về một điểm bán hoặc người bán cá nhân.</p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên Cột</th>
+              <th>Kiểu Dữ Liệu</th>
+              <th>Khóa / Ràng Buộc</th>
+              <th>Ý Nghĩa Nghiệp Vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-pk">PRIMARY KEY</span> DEFAULT uuid_generate_v4()</td>
+              <td>Định danh món đồ.</td>
+            </tr>
+            <tr>
+              <td><code>seller_id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-fk">FK seller_profiles(user_id) ON DELETE CASCADE</span></td>
+              <td>Chủ sở hữu món đồ.</td>
+            </tr>
+            <tr>
+              <td><code>title</code></td>
+              <td><span class="badge badge-type">VARCHAR(255)</span></td>
+              <td>NOT NULL</td>
+              <td>Tên món đồ (VD: Tủ lạnh mini Sanyo, Bàn học sinh viên).</td>
+            </tr>
+            <tr>
+              <td><code>category</code></td>
+              <td><span class="badge badge-type">VARCHAR(50)</span></td>
+              <td>NOT NULL</td>
+              <td>Danh mục: appliances, electronics, furniture, scrap...</td>
+            </tr>
+            <tr>
+              <td><code>price_type</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (price_type IN ('fixed', 'negotiable', 'free'))</td>
+              <td>Loại giá: <code>fixed</code> (giá cố định), <code>negotiable</code> (thương lượng), <code>free</code> (0đ tặng miễn phí).</td>
+            </tr>
+            <tr>
+              <td><code>price_amount</code></td>
+              <td><span class="badge badge-type">NUMERIC(15,2)</span></td>
+              <td>NULLABLE</td>
+              <td>Số tiền (VNĐ). Sẽ là NULL nếu loại giá là free hoặc negotiable.</td>
+            </tr>
+            <tr>
+              <td><code>condition</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (condition IN ('new', 'used', 'scrap'))</td>
+              <td>Tình trạng món đồ: Mới, Đã dùng, hoặc Xác ve chai.</td>
+            </tr>
+            <tr>
+              <td><code>images</code></td>
+              <td><span class="badge badge-type">TEXT[]</span></td>
+              <td>DEFAULT '{}'</td>
+              <td>Mảng URL ảnh chụp món đồ thực tế.</td>
+            </tr>
+            <tr>
+              <td><code>status</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (status IN ('available', 'sold'))</td>
+              <td><code>available</code>: Còn hàng; <code>sold</code>: Đã bán (tự động ẩn).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLE 4: FORUM POSTS -->
+      <h3>4. Bảng <code>public.forum_posts</code> (Tin Đăng Diễn Đàn 2 Chiều)</h3>
+      <p>Lưu trữ bảng tin cộng đồng phân loại 2 chiều: Cần Bán Gấp vs Tìm Mua / Gom Hàng.</p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên Cột</th>
+              <th>Kiểu Dữ Liệu</th>
+              <th>Khóa / Ràng Buộc</th>
+              <th>Ý Nghĩa Nghiệp Vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-pk">PRIMARY KEY</span> DEFAULT uuid_generate_v4()</td>
+              <td>Định danh bài viết diễn đàn.</td>
+            </tr>
+            <tr>
+              <td><code>type</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (type IN ('sell', 'buy'))</td>
+              <td><code>sell</code>: Cần bán / Thanh lý gấp; <code>buy</code>: Tìm mua / Gom hàng ve chai.</td>
+            </tr>
+            <tr>
+              <td><code>title</code></td>
+              <td><span class="badge badge-type">VARCHAR(255)</span></td>
+              <td>NOT NULL</td>
+              <td>Tiêu đề tin đăng.</td>
+            </tr>
+            <tr>
+              <td><code>content</code></td>
+              <td><span class="badge badge-type">TEXT</span></td>
+              <td>NOT NULL</td>
+              <td>Nội dung mô tả chi tiết món đồ, thời gian lấy.</td>
+            </tr>
+            <tr>
+              <td><code>author_id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-fk">FK users(id) ON DELETE CASCADE</span></td>
+              <td>Người đăng bài.</td>
+            </tr>
+            <tr>
+              <td><code>district</code></td>
+              <td><span class="badge badge-type">VARCHAR(100)</span></td>
+              <td>NOT NULL</td>
+              <td>Quận/Huyện (Cầu Giấy, Đống Đa, Hai Bà Trưng...).</td>
+            </tr>
+            <tr>
+              <td><code>price_type</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (price_type IN ('fixed', 'negotiable', 'free'))</td>
+              <td>Loại giá thương lượng hoặc số tiền cụ thể.</td>
+            </tr>
+            <tr>
+              <td><code>is_urgent</code></td>
+              <td><span class="badge badge-type">BOOLEAN</span></td>
+              <td>DEFAULT false</td>
+              <td>Huy hiệu <strong>⚡ GẤP 24H</strong> để người thu mua ưu tiên gom nhanh.</td>
+            </tr>
+            <tr>
+              <td><code>status</code></td>
+              <td><span class="badge badge-type">VARCHAR(20)</span></td>
+              <td>CHECK (status IN ('available', 'sold'))</td>
+              <td>Trạng thái bài viết: <code>available</code> hoặc <code>sold</code>.</td>
+            </tr>
+            <tr>
+              <td><code>expires_at</code></td>
+              <td><span class="badge badge-type">TIMESTAMPTZ</span></td>
+              <td>NULLABLE</td>
+              <td>Thời điểm bài viết tự động hết hạn (3, 7 hoặc 14 ngày).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLE 5: FORUM COMMENTS -->
+      <h3>5. Bảng <code>public.forum_comments</code> (Bình Luận & Trả Giá Mua)</h3>
+      <p>Cho phép người mua để lại bình luận hoặc nhập mức giá đề xuất thương lượng trực tiếp dưới bài viết.</p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên Cột</th>
+              <th>Kiểu Dữ Liệu</th>
+              <th>Khóa / Ràng Buộc</th>
+              <th>Ý Nghĩa Nghiệp Vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-pk">PRIMARY KEY</span> DEFAULT uuid_generate_v4()</td>
+              <td>Định danh bình luận.</td>
+            </tr>
+            <tr>
+              <td><code>post_id</code></td>
+              <td><span class="badge badge-type">UUID</span></td>
+              <td><span class="badge badge-fk">FK forum_posts(id) ON DELETE CASCADE</span></td>
+              <td>Bài viết diễn đàn được bình luận.</td>
+            </tr>
+            <tr>
+              <td><code>author_name</code></td>
+              <td><span class="badge badge-type">VARCHAR(255)</span></td>
+              <td>NOT NULL</td>
+              <td>Tên người bình luận.</td>
+            </tr>
+            <tr>
+              <td><code>content</code></td>
+              <td><span class="badge badge-type">TEXT</span></td>
+              <td>NOT NULL</td>
+              <td>Nội dung câu hỏi / trao đổi.</td>
+            </tr>
+            <tr>
+              <td><code>offer_price</code></td>
+              <td><span class="badge badge-type">NUMERIC(15,2)</span></td>
+              <td>NULLABLE</td>
+              <td>Mức giá trả / thương lượng (nếu người mua muốn trả giá).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 4: HÀM KHÔNG GIAN GIS -->
+    <section id="database-functions">
+      <div class="section-header">
+        <div class="section-icon">⚡</div>
+        <h2>4. Hàm Tính Bán Kính Không Gian Địa Lý (GIS Function)</h2>
+      </div>
+
+      <p>Để tối ưu hiệu năng và độ chính xác tính khoảng cách theo độ cong Trái Đất (Great-Circle Distance), hệ thống cài đặt hàm công thức <strong>Haversine</strong> trực tiếp bằng ngôn ngữ PL/pgSQL:</p>
+
+      <pre><code>-- 1. Hàm tính khoảng cách chính xác theo km giữa 2 tọa độ GPS
+CREATE OR REPLACE FUNCTION calculate_distance_km(
+    lat1 DOUBLE PRECISION, lon1 DOUBLE PRECISION,
+    lat2 DOUBLE PRECISION, lon2 DOUBLE PRECISION
+) RETURNS DOUBLE PRECISION AS $$
+DECLARE
+    r DOUBLE PRECISION := 6371.0; -- Bán kính Trái Đất trung bình (km)
+    dlat DOUBLE PRECISION := radians(lat2 - lat1);
+    dlon DOUBLE PRECISION := radians(lon2 - lon1);
+    a DOUBLE PRECISION;
+    c DOUBLE PRECISION;
+BEGIN
+    a := sin(dlat / 2.0)^2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2.0)^2;
+    c := 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+    RETURN ROUND((r * c)::numeric, 2);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- 2. Hàm quét tìm điểm bán trong bán kính radius_km và sắp xếp tăng dần
+CREATE OR REPLACE FUNCTION get_nearby_sellers(
+    user_lat DOUBLE PRECISION, user_lon DOUBLE PRECISION, radius_km DOUBLE PRECISION
+)
+RETURNS TABLE (
+    user_id UUID, shop_name VARCHAR, seller_type VARCHAR,
+    address TEXT, latitude DOUBLE PRECISION, longitude DOUBLE PRECISION,
+    categories TEXT[], open_time VARCHAR, close_time VARCHAR,
+    is_open_now BOOLEAN, phone VARCHAR, zalo VARCHAR,
+    rating NUMERIC, is_verified BOOLEAN, is_sold_out BOOLEAN,
+    distance_km DOUBLE PRECISION
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT s.user_id, s.shop_name, s.seller_type, s.address, s.latitude, s.longitude,
+           s.categories, s.open_time, s.close_time, s.is_open_now, s.phone, s.zalo,
+           s.rating, s.is_verified, s.is_sold_out,
+           calculate_distance_km(user_lat, user_lon, s.latitude, s.longitude) AS distance_km
+    FROM public.seller_profiles s
+    WHERE s.is_sold_out = false
+      AND calculate_distance_km(user_lat, user_lon, s.latitude, s.longitude) <= radius_km
+    ORDER BY distance_km ASC;
+END;
+$$ LANGUAGE plpgsql STABLE;</code></pre>
+    </section>
+
+    <!-- SECTION 5: REALTIME & PHÂN QUYỀN RLS -->
+    <section id="realtime-rls">
+      <div class="section-header">
+        <div class="section-icon">🔄</div>
+        <h2>5. Cấu Hình Đồng Bộ Realtime & Phân Quyền (RLS)</h2>
+      </div>
+
+      <h3>Cơ chế đồng bộ Realtime không cần F5</h3>
+      <p>
+        Khi máy A đăng tin hoặc đánh dấu Đã Bán, máy B sẽ nhận được sự kiện qua kênh WebSocket <code>supabase_realtime</code> trong < 300ms.
+      </p>
+
+      <div class="callout callout-success">
+        <div>
+          <strong>Cải tiến UX thông minh:</strong> Để tránh trường hợp người dùng đang đọc bài mà trang bị giật hoặc tải lại liên tục khi database có biến động, hệ thống sử dụng thanh thông báo nổi <em>"Có N tin mới đăng · Bấm để xem"</em> (giống cơ chế của Twitter/Threads). Khi người dùng chủ động bấm hoặc lướt lên trên thì tin mới mới trượt vào êm ái.
+        </div>
+      </div>
+
+      <pre><code>-- Kích hoạt Realtime Publication trên Supabase
+ALTER PUBLICATION supabase_realtime ADD TABLE public.seller_profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.forum_posts;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.forum_comments;
+
+-- Phân quyền truy cập công khai cho ứng dụng C2C không cần login
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seller_profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_posts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_comments DISABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON public.users TO anon, authenticated, service_role;
+GRANT ALL ON public.seller_profiles TO anon, authenticated, service_role;
+GRANT ALL ON public.products TO anon, authenticated, service_role;
+GRANT ALL ON public.forum_posts TO anon, authenticated, service_role;
+GRANT ALL ON public.forum_comments TO anon, authenticated, service_role;</code></pre>
+    </section>
+
+    <!-- SECTION 6: NGHIỆP VỤ TEST & QA MATRIX -->
+    <section id="test-matrix">
+      <div class="section-header">
+        <div class="section-icon">🧪</div>
+        <h2>6. Nghiệp Vụ Test & Ma Trận Kiểm Thử (QA Test Matrix)</h2>
+      </div>
+
+      <p>Bảng tổng hợp toàn bộ 7 phân hệ nghiệp vụ cần kiểm thử, mức độ ưu tiên và tiêu chí chấp thuận (Acceptance Criteria):</p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã Phân Hệ</th>
+              <th>Tên Phân Hệ Nghiệp Vụ</th>
+              <th>Số Ca Test</th>
+              <th>Độ Ưu Tiên</th>
+              <th>Mục Tiêu Đạt Được</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>MOD-01</strong></td>
+              <td>Định vị GPS & Bản đồ số tương tác</td>
+              <td>4 Test Cases</td>
+              <td><span class="badge badge-p1">P1 - Critical</span></td>
+              <td>Lấy tọa độ GPS người dùng chính xác; hỗ trợ kéo marker xanh đổi vị trí tùy biến.</td>
+            </tr>
+            <tr>
+              <td><strong>MOD-02</strong></td>
+              <td>Lọc bán kính Haversine (1km - 20km)</td>
+              <td>3 Test Cases</td>
+              <td><span class="badge badge-p1">P1 - Critical</span></td>
+              <td>Khoảng cách tính chính xác theo km; slider thay đổi cập nhật danh sách ngay lập tức.</td>
+            </tr>
+            <tr>
+              <td><strong>MOD-03</strong></td>
+              <td>Đăng ký điểm bán & Quản lý kho hàng</td>
+              <td>5 Test Cases</td>
+              <td><span class="badge badge-p1">P1 - Critical</span></td>
+              <td>Ghim điểm bán lên bản đồ, nén ảnh client, đánh dấu Đã Bán tự động ẩn vựa cá nhân.</td>
+            </tr>
+            <tr>
+              <td><strong>MOD-04</strong></td>
+              <td>Diễn đàn 2 chiều (Cần Bán vs Tìm Mua)</td>
+              <td>6 Test Cases</td>
+              <td><span class="badge badge-p1">P1 - Critical</span></td>
+              <td>Lọc theo quận huyện, giá 0đ, gấp 24h; phân trang cuộn vô tận (Infinite Scroll) 8 tin/lần.</td>
+            </tr>
+            <tr>
+              <td><strong>MOD-05</strong></td>
+              <td>Đồng bộ Realtime giữa 2 thiết bị</td>
+              <td>3 Test Cases</td>
+              <td><span class="badge badge-p2">P2 - High</span></td>
+              <td>Thiết bị A thêm/sửa tin thì thiết bị B hiện pill thông báo tức thì mà không cần F5.</td>
+            </tr>
+            <tr>
+              <td><strong>MOD-06</strong></td>
+              <td>Kiểm duyệt cộng đồng & Báo cáo tin vi phạm</td>
+              <td>4 Test Cases</td>
+              <td><span class="badge badge-p2">P2 - High</span></td>
+              <td>Gửi báo cáo tin xấu với 5 lý do; người dùng tự ẩn tin; nhận >= 3 report tự ẩn toàn hệ thống.</td>
+            </tr>
+            <tr>
+              <td><strong>MOD-07</strong></td>
+              <td>PWA Cài App & Danh sách Yêu thích</td>
+              <td>3 Test Cases</td>
+              <td><span class="badge badge-p2">P2 - High</span></td>
+              <td>Cài app 1 chạm trên Chrome/Android; hướng dẫn Safari iOS; lưu tin offline vào localStorage.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 7: KỊCH BẢN KIỂM THỬ CHI TIẾT -->
+    <section id="test-scenarios">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <h2>7. Kịch Bản Kiểm Thử Chi Tiết (Test Cases Specification)</h2>
+      </div>
+
+      <!-- MOD-01 -->
+      <h3>Phân hệ 1: Định Vị GPS & Bản Đồ Số (MOD-01)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên Kịch Bản Kiểm Thử</th>
+              <th>Các Bước Thực Hiện</th>
+              <th>Kết Quả Mong Đợi</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TC-GPS-01</code></td>
+              <td>Cấp quyền vị trí trình duyệt thành công</td>
+              <td>1. Mở web lần đầu.<br>2. Bấm "Cho phép" khi trình duyệt hỏi quyền GPS.</td>
+              <td>Bản đồ tự động căn giữa vào tọa độ người dùng; marker xanh có vòng tròn sóng lan tỏa xuất hiện.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-GPS-02</code></td>
+              <td>Từ chối quyền vị trí (Fallback an toàn)</td>
+              <td>1. Bấm "Chặn" quyền GPS.<br>2. Quan sát thông báo.</td>
+              <td>Hiển thị thanh vàng cảnh báo, tự động lấy tọa độ mặc định Hồ Hoàn Kiếm, Hà Nội; không crash trang.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-GPS-03</code></td>
+              <td>Kéo thả Marker người mua để đổi vị trí</td>
+              <td>1. Dùng chuột/ngón tay kéo marker xanh đến vị trí mới.<br>2. Thả tay.</td>
+              <td>Vòng tròn quét bán kính tự di chuyển theo; danh sách điểm bán xung quanh được tính toán lại theo vị trí mới.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-GPS-04</code></td>
+              <td>Nút "Vị trí của tôi" trên Header</td>
+              <td>Bấm nút "Vị trí của tôi" trên thanh tiêu đề.</td>
+              <td>Icon xoay tròn định vị lại GPS thiết bị và đưa bản đồ về đúng tâm vị trí hiện tại.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOD-02 -->
+      <h3>Phân hệ 2: Bán Kính Quét Lân Cận (MOD-02)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên Kịch Bản Kiểm Thử</th>
+              <th>Các Bước Thực Hiện</th>
+              <th>Kết Quả Mong Đợi</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TC-RAD-01</code></td>
+              <td>Thu nhỏ bán kính về 1km</td>
+              <td>Kéo thanh trượt về mức 1km.</td>
+              <td>Vòng tròn xanh trên bản đồ co lại; chỉ các điểm bán có khoảng cách &le; 1.00 km hiển thị; badge kết quả cập nhật số lượng.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-RAD-02</code></td>
+              <td>Mở rộng bán kính lên 15km - 20km</td>
+              <td>Kéo thanh trượt lên 20km.</td>
+              <td>Vòng tròn bao quát rộng hơn; các điểm bán ở các quận huyện xa hơn lần lượt xuất hiện theo khoảng cách tăng dần.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-RAD-03</code></td>
+              <td>Không tìm thấy điểm bán (Empty State)</td>
+              <td>Chọn bán kính 1km ở khu vực thưa người.</td>
+              <td>Hiển thị thẻ rỗng lịch sự kèm nút <em>"Mở rộng bán kính 10km & xóa lọc"</em> để người dùng bấm khôi phục nhanh.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOD-03 -->
+      <h3>Phân hệ 3: Đăng Bán Đồ & Quản Lý Điểm Bán (MOD-03)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên Kịch Bản Kiểm Thử</th>
+              <th>Các Bước Thực Hiện</th>
+              <th>Kết Quả Mong Đợi</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TC-SEL-01</code></td>
+              <td>Đăng ký điểm bán cá nhân (Dọn nhà)</td>
+              <td>1. Bấm "Đăng bán đồ".<br>2. Chọn loại "Cá nhân pass đồ".<br>3. Nhập tên, số điện thoại, tải 1 ảnh tủ lạnh cũ.<br>4. Bấm "Xác nhận ghim lên bản đồ".</td>
+              <td>Điểm bán xuất hiện trên bản đồ với pin màu tím; kho hàng hiển thị món tủ lạnh; thông tin liên hệ được lưu nhớ vào máy cho các lần sau.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-SEL-02</code></td>
+              <td>Tự động nén ảnh Client</td>
+              <td>Tải lên file ảnh gốc dung lượng lớn 5MB - 10MB chụp từ điện thoại.</td>
+              <td>Hàm <code>compressImageFile</code> nén ảnh xuống dưới 300KB trước khi gán data URL, tốc độ mở modal tức thì không lag.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-SEL-03</code></td>
+              <td>Đánh dấu Đã Bán để ẩn khỏi bản đồ</td>
+              <td>1. Người bán mở "Tin của tôi" hoặc mở kho hàng cá nhân.<br>2. Bấm nút "Đã bán" trên món đồ duy nhất.</td>
+              <td>Món đồ chuyển trạng thái "Đã bán"; điểm bán cá nhân tự động ẩn hoàn toàn khỏi bản đồ (<code>is_sold_out = true</code>) để không ai làm phiền.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-SEL-04</code></td>
+              <td>Chia sẻ liên kết điểm bán (Deep Link)</td>
+              <td>Bấm nút Share góc trên modal kho hàng.</td>
+              <td>Sao chép link có dạng <code>/?seller={userId}</code>. Người khác mở link này bản đồ sẽ tự động mở đúng kho hàng của shop đó.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOD-04 -->
+      <h3>Phân hệ 4: Diễn Đàn Cộng Đồng 2 Chiều (MOD-04)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên Kịch Bản Kiểm Thử</th>
+              <th>Các Bước Thực Hiện</th>
+              <th>Kết Quả Mong Đợi</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TC-FOR-01</code></td>
+              <td>Chuyển đổi Tab "Cần Bán" và "Tìm Mua"</td>
+              <td>Bấm chuyển đổi giữa 2 tab trên thanh đầu trang Diễn Đàn.</td>
+              <td>Danh sách hiển thị đúng loại tin; tab Cần Bán mang sắc xanh dịu Royal Blue, tab Tìm Mua mang sắc Sky Blue thanh lịch.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-FOR-02</code></td>
+              <td>Cuộn vô tận (Infinite Scroll Pagination)</td>
+              <td>1. Mở diễn đàn (ban đầu tải 8 bài viết đầu tiên).<br>2. Lướt chuột xuống đáy trang.</td>
+              <td>Khi lướt tới cách đáy 250px, hệ thống tự động tải tiếp trang tiếp theo (8 bài nữa) mượt mà không cần bấm nút qua trang.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-FOR-03</code></td>
+              <td>Bộ lọc kết hợp: Quận Huyện + Đồ 0đ + Gấp 24h</td>
+              <td>1. Chọn quận "Cầu Giấy".<br>2. Bấm pill "🎁 Đồ tặng 0đ".</td>
+              <td>Chỉ hiển thị các bài đăng miễn phí tại quận Cầu Giấy; counter số bài viết cập nhật chính xác.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-FOR-04</code></td>
+              <td>Đăng bài hẹn giờ tự hủy (Auto-Expire)</td>
+              <td>Đăng bài và chọn thời hạn "Tự ẩn sau 3 ngày".</td>
+              <td>Bài đăng hiển thị badge đếm ngược <em>"Còn 3 ngày"</em>; sau thời gian này hệ thống tự ẩn tin khỏi bảng tin chung.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-FOR-05</code></td>
+              <td>Nhắn Zalo 1-chạm kèm mẫu tin hỏi đồ</td>
+              <td>Bấm nút "Nhắn Zalo" tại một bài đăng bất kỳ.</td>
+              <td>Hệ thống tự động sao chép tin nhắn mẫu (VD: <em>"Chào bạn, mình thấy tin đăng [Tủ gỗ] giá [450.000đ] trên Pass Đồ..."</em>) và mở ứng dụng Zalo tới số người đăng.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOD-05 & 06 -->
+      <h3>Phân hệ 5 & 6: Đồng Bộ Realtime & Kiểm Duyệt Cộng Đồng (MOD-05 & MOD-06)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên Kịch Bản Kiểm Thử</th>
+              <th>Các Bước Thực Hiện</th>
+              <th>Kết Quả Mong Đợi</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TC-RT-01</code></td>
+              <td>Đồng bộ Realtime giữa 2 trình duyệt</td>
+              <td>1. Mở tab A và tab B cạnh nhau.<br>2. Ở tab A, đăng một bài diễn đàn mới.</td>
+              <td>Tab B trong vòng 0.5s hiển thị thanh thông báo nổi <em>"Có 1 tin mới đăng · Bấm để xem"</em>; tab B không bị giật trang.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-MOD-01</code></td>
+              <td>Báo cáo tin vi phạm & Ẩn tin cá nhân</td>
+              <td>1. Bấm icon 🚩 tại một bài viết.<br>2. Chọn lý do "Lừa đảo / Yêu cầu chuyển cọc".<br>3. Tích chọn "Ẩn tin khỏi mắt tôi" -> Gửi.</td>
+              <td>Bài viết lập tức được thay thế bằng banner xám kèm nút "Hiện lại"; danh sách ẩn lưu vào <code>localStorage</code>.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-MOD-02</code></td>
+              <td>Tự động ẩn tin vi phạm khi nhận &ge; 3 lượt báo cáo</td>
+              <td>Gửi 3 lượt báo cáo từ các thiết bị khác nhau cho cùng một bài viết ID.</td>
+              <td>Hệ thống kích hoạt cờ tự động ẩn; bài viết bị ẩn hoàn toàn khỏi diễn đàn cộng đồng chung.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOD-07 -->
+      <h3>Phân hệ 7: PWA Di Động & Danh Sách Yêu Thích (MOD-07)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên Kịch Bản Kiểm Thử</th>
+              <th>Các Bước Thực Hiện</th>
+              <th>Kết Quả Mong Đợi</th>
+              <th>Trạng Thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TC-PWA-01</code></td>
+              <td>Cài đặt Web App trên Chrome/Android</td>
+              <td>Truy cập trên Chrome Android, bấm nút "📲 Cài App" trên Header.</td>
+              <td>Bật prompt cài đặt chính thức của Android; sau khi cài xuất hiện icon App trên màn hình chính, mở độc lập không có thanh địa chỉ web.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-PWA-02</code></td>
+              <td>Nhận diện thiết bị iOS Safari</td>
+              <td>Truy cập bằng iPhone Safari, bấm "Cài App".</td>
+              <td>Tự động hiển thị modal hướng dẫn 3 bước: Bấm nút Share ⎋ -> Chọn "Thêm vào MH chính" ⊞.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+            <tr>
+              <td><code>TC-FAV-01</code></td>
+              <td>Lưu đồ yêu thích (Wishlist) không cần tài khoản</td>
+              <td>1. Bấm icon tim ❤️ trên 2 bài viết và 1 món đồ trong shop.<br>2. Bấm nút "Đã lưu" trên Header.</td>
+              <td>Modal danh sách yêu thích mở ra hiển thị đúng 3 món; có thể bấm gọi/zalo ngay hoặc xóa khỏi yêu thích; dữ liệu lưu vĩnh viễn trên máy.</td>
+              <td><span class="badge badge-pass">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 8: TRƯỜNG HỢP BIÊN & NGOẠI LỆ -->
+    <section id="edge-cases">
+      <div class="section-header">
+        <div class="section-icon">⚠️</div>
+        <h2>8. Các Trường Hợp Kiểm Thử Biên & Xử Lý Ngoại Lệ (Edge Cases)</h2>
+      </div>
+
+      <div class="cards-grid">
+        <div class="feature-card">
+          <h4><span>🌐</span> Mạng chập chờn / Mất kết nối</h4>
+          <p>Service Worker lưu cache-first app shell (HTML, CSS, JS, Icon SVG) giúp giao diện vẫn mở mượt mà tức thì. Khi có mạng trở lại, API REST Supabase tự động cập nhật.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span>🚫</span> Xử lý lỗi API REST 400</h4>
+          <p>Cú pháp query Supabase REST được format chặt chẽ, chuỗi URL được encode an toàn tránh lỗi cú pháp <code>or=(status.eq.available,author_id.eq.uuid)</code> khi filter danh sách tin.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span>🔄</span> Debounce thao tác liên tục</h4>
+          <p>Thao tác kéo slider bán kính và nhập ô tìm kiếm được tích hợp debounce thời gian trễ 250ms, tránh gửi hàng chục truy vấn dồn dập làm nghẽn kết nối mạng của thiết bị.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span>📦</span> Tối ưu Bundle Code-Splitting</h4>
+          <p>Các thư viện nặng (Leaflet, Supabase, Lucide) được chia tách thành các chunk độc lập, không có file JS nào vượt quá 500kB, thời gian nạp trang đầu tiên đạt dưới 1.2s trên mạng di động 4G.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="text-align: center; padding: 24px 0 0; color: var(--slate-400); font-size: 13px;">
+      <p>Pass Đồ Gần Nhà · Hệ Thống Thanh Lý Đồ Cũ & Thu Mua Phế Liệu Theo Vị Trí Địa Lý</p>
+      <p style="font-size: 11px; margin-top: 4px;">Tài liệu phát hành nội bộ phục vụ bàn giao & nghiệm thu dự án · 2026</p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // Smooth scroll active link highlighter
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      if (pageYOffset >= sectionTop - 120) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === `#${current}`) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

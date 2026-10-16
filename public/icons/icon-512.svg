@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#ea580c" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="128" fill="url(#grad)" />
+  <!-- Center Market Box / Sparkle Graphics -->
+  <g transform="translate(106, 106)" filter="url(#shadow)">
+    <!-- Package box -->
+    <path d="M150 40 L260 90 L150 140 L40 90 Z" fill="#ffffff" fill-opacity="0.95" />
+    <path d="M40 105 L140 155 L140 260 L40 210 Z" fill="#ffffff" fill-opacity="0.8" />
+    <path d="M160 155 L260 105 L260 210 L160 260 Z" fill="#ffffff" fill-opacity="0.9" />
+    <!-- Pin dot -->
+    <circle cx="150" cy="50" r="16" fill="#ea580c" />
+  </g>
+</svg>

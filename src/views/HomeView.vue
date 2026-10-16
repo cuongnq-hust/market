@@ -7,7 +7,11 @@ import SellerCard from '../components/seller/SellerCard.vue';
 import SellerInventoryModal from '../components/seller/SellerInventoryModal.vue';
 import RegisterSellerModal from '../components/seller/RegisterSellerModal.vue';
 import MyListingsModal from '../components/seller/MyListingsModal.vue';
+import { watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { AlertCircle, RotateCcw, PackageSearch } from 'lucide-vue-next';
+
+const route = useRoute();
 
 const {
   viewMode,
@@ -24,6 +28,25 @@ const {
 
 const { locationError, resetToDefaultCenter } = useGeolocation();
 
+// Deep link: Tự động mở kho hàng nếu vào từ link chia sẻ (?seller=xxx)
+const checkDeepLinkSeller = () => {
+  const sellerId = route.query.seller as string | undefined;
+  if (!sellerId) return;
+
+  const targetSeller = nearbySellers.value.find((s) => s.userId === sellerId);
+  if (targetSeller && !selectedSeller.value) {
+    openSellerModal(targetSeller);
+  }
+};
+
+watch(
+  () => nearbySellers.value.length,
+  () => {
+    checkDeepLinkSeller();
+  },
+  { immediate: true }
+);
+
 const resetFilters = () => {
   filters.searchQuery = '';
   filters.category = 'all';
@@ -34,7 +57,7 @@ const resetFilters = () => {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 h-[calc(100vh-64px)] w-full overflow-hidden bg-slate-100">
+  <div class="flex flex-col flex-1 h-[calc(100vh-64px)] w-full overflow-hidden bg-gradient-to-br from-[#f0f5fa] via-[#edf3fa] to-[#f4f8fd]">
     <!-- Top Filter & Search Toolbar -->
     <FilterBar />
 
@@ -49,7 +72,7 @@ const resetFilters = () => {
       </div>
       <button
         @click="resetToDefaultCenter"
-        class="text-[11px] font-semibold underline hover:text-amber-900 shrink-0"
+        class="text-[11px] font-semibold underline hover:text-amber-900 shrink-0 cursor-pointer"
       >
         Dùng tọa độ Hà Nội
       </button>
@@ -68,20 +91,20 @@ const resetFilters = () => {
       <!-- 2. Parallel List View -->
       <section
         v-show="viewMode === 'list'"
-        class="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50"
+        class="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-[#f0f5fa] via-[#edf3fa] to-[#f4f8fd]"
       >
         <div class="max-w-6xl mx-auto space-y-4">
           <!-- List View Header -->
-          <div class="flex items-center justify-between pb-2 border-b border-gray-200">
+          <div class="flex items-center justify-between pb-2 border-b border-blue-100/80">
             <div>
-              <h2 class="text-base sm:text-lg font-bold text-gray-900">
+              <h2 class="text-base sm:text-lg font-bold text-slate-900">
                 Các điểm thu mua & người bán gần bạn nhất
               </h2>
-              <p class="text-xs text-gray-500">
+              <p class="text-xs text-slate-500">
                 Được tự động sắp xếp theo khoảng cách tăng dần từ vị trí của bạn
               </p>
             </div>
-            <span class="text-xs font-semibold px-3 py-1 bg-brand-50 text-brand-700 border border-brand-200 rounded-full">
+            <span class="text-xs font-semibold px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200/80 rounded-full">
               {{ nearbySellers.length }} kết quả
             </span>
           </div>
@@ -89,18 +112,18 @@ const resetFilters = () => {
           <!-- Empty State -->
           <div
             v-if="nearbySellers.length === 0"
-            class="bg-white rounded-3xl border border-gray-200 p-12 text-center my-8 shadow-xs"
+            class="bg-white/95 rounded-3xl border border-blue-100 p-12 text-center my-8 shadow-[0_4px_20px_rgba(37,99,235,0.05)]"
           >
-            <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <PackageSearch class="w-8 h-8" />
             </div>
-            <h3 class="text-base font-bold text-gray-800">Không tìm thấy điểm bán nào phù hợp</h3>
-            <p class="text-xs text-gray-500 max-w-sm mx-auto mt-1">
+            <h3 class="text-base font-bold text-slate-800">Không tìm thấy điểm bán nào phù hợp</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">
               Thử tăng bán kính tìm kiếm (hiện tại {{ filters.radiusKm }}km) hoặc đặt lại bộ lọc.
             </p>
             <button
               @click="resetFilters"
-              class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-xl shadow-xs transition active:scale-95"
+              class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition active:scale-95 cursor-pointer"
             >
               <RotateCcw class="w-3.5 h-3.5" />
               <span>Mở rộng bán kính 10km & xóa lọc</span>

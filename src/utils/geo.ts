@@ -52,3 +52,42 @@ export function isWithinRadius(
 ): boolean {
   return calculateDistanceKm(center, target) <= radiusKm;
 }
+
+/**
+ * Tra cứu địa chỉ tiếng Việt từ tọa độ (Reverse Geocode qua OpenStreetMap miễn phí)
+ */
+export async function reverseGeocodeAddress(latitude: number, longitude: number): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'Accept-Language': 'vi,en;q=0.9',
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data) return null;
+
+    const addr = data.address || {};
+    const parts = [
+      addr.house_number ? `Số ${addr.house_number}` : '',
+      addr.road || '',
+      addr.suburb || addr.quarter || addr.neighbourhood || '',
+      addr.city_district || addr.district || addr.county || '',
+      addr.city || addr.state || '',
+    ].filter(Boolean);
+
+    if (parts.length >= 2) {
+      return parts.join(', ');
+    }
+
+    return data.display_name || null;
+  } catch (err) {
+    console.warn('Reverse geocoding error:', err);
+    return null;
+  }
+}
+

@@ -16,6 +16,7 @@ import type { ProductCategory, ProductCondition, ProductPrice, SellerType } from
 import { CATEGORIES } from '../../utils/constants';
 import { compressImageFile } from '../../utils/imageCompressor';
 import { getAnonymousDeviceId, getSavedProfile, saveUserProfile } from '../../utils/deviceSession';
+import { reverseGeocodeAddress } from '../../utils/geo';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -80,14 +81,20 @@ const handleFileUpload = async (event: Event) => {
   if (!files || files.length === 0) return;
 
   isUploadingImage.value = true;
+  const MAX_IMAGES = 5;
   try {
     for (let i = 0; i < files.length; i++) {
+      if (form.images.length >= MAX_IMAGES) {
+        errorMessage.value = `Chỉ được chọn tối đa ${MAX_IMAGES} ảnh`;
+        break;
+      }
       const file = files[i];
       const compressedDataUrl = await compressImageFile(file, 1000, 0.8);
       addImage(compressedDataUrl);
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Lỗi nén ảnh:', err);
+    errorMessage.value = err?.message || 'Lỗi khi xử lý ảnh tải lên';
   } finally {
     isUploadingImage.value = false;
     if (fileInputRef.value) fileInputRef.value.value = '';
@@ -95,6 +102,10 @@ const handleFileUpload = async (event: Event) => {
 };
 
 const addImage = (url: string) => {
+  if (form.images.length >= 5) {
+    errorMessage.value = 'Chỉ được chọn tối đa 5 ảnh';
+    return;
+  }
   if (url && !form.images.includes(url)) {
     form.images.push(url);
   }
@@ -116,9 +127,21 @@ const addCustomImage = () => {
   customImageUrl.value = '';
 };
 
-const useCurrentGpsLocation = () => {
+const isResolvingAddress = ref(false);
+
+const useCurrentGpsLocation = async () => {
   form.latitude = userLocation.value.latitude;
   form.longitude = userLocation.value.longitude;
+
+  isResolvingAddress.value = true;
+  try {
+    const detectedAddr = await reverseGeocodeAddress(form.latitude, form.longitude);
+    if (detectedAddr) {
+      form.address = detectedAddr;
+    }
+  } finally {
+    isResolvingAddress.value = false;
+  }
 };
 
 const handleSubmit = async () => {
@@ -195,14 +218,14 @@ const handleSubmit = async () => {
   <div class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-fade-in">
     <div class="relative bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-gray-100">
       <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-brand-50 to-emerald-50">
+      <div class="px-6 py-4 border-b border-blue-100 flex items-center justify-between bg-gradient-to-r from-blue-50/80 to-sky-50/50">
         <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-2xl bg-brand-600 text-white flex items-center justify-center shadow-xs">
+          <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
             <Plus class="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-gray-900 leading-tight">Đăng Ký Bán / Pass Đồ Cũ</h2>
-            <p class="text-xs text-gray-500">Ghim vị trí lên bản đồ để người xung quanh tìm thấy bạn</p>
+            <h2 class="text-lg font-black text-slate-900 leading-tight">Đăng Ký Bán / Pass Đồ Cũ</h2>
+            <p class="text-xs text-slate-500">Ghim vị trí lên bản đồ để người xung quanh tìm thấy bạn</p>
           </div>
         </div>
 
@@ -322,10 +345,12 @@ const handleSubmit = async () => {
             <button
               type="button"
               @click="useCurrentGpsLocation"
-              class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 font-semibold"
+              :disabled="isResolvingAddress"
+              class="inline-flex items-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 font-semibold cursor-pointer active:scale-95 disabled:opacity-50"
             >
-              <Navigation class="w-3 h-3" />
-              <span>Ghim theo GPS hiện tại của tôi</span>
+              <Loader2 v-if="isResolvingAddress" class="w-3.5 h-3.5 animate-spin text-blue-600" />
+              <Navigation v-else class="w-3 h-3" />
+              <span>{{ isResolvingAddress ? 'Đang định vị địa chỉ...' : 'Ghim theo GPS & tự điền địa chỉ' }}</span>
             </button>
           </div>
           <input
@@ -537,7 +562,7 @@ const handleSubmit = async () => {
           <button
             type="submit"
             :disabled="isSubmitting || !form.shopName.trim()"
-            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-brand-500/20 transition active:scale-95 disabled:bg-gray-300"
+            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 transition active:scale-95 disabled:bg-slate-300 cursor-pointer"
           >
             {{ isSubmitting ? 'Đang đăng ký...' : 'Xác nhận ghim lên bản đồ' }}
           </button>

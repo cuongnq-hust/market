@@ -78,12 +78,18 @@ export interface ProductWithSeller extends Product {
   distanceKm?: number;
 }
 
+export type PriceRangeFilter = 'all' | 'free' | 'under_100k' | '100k_500k' | 'over_1m' | 'negotiable';
+export type SortOption = 'newest' | 'urgent' | 'price_asc' | 'price_desc';
+
 export interface FilterState {
   searchQuery: string;
   category: ProductCategory | 'all';
   radiusKm: number;
   onlyOpenNow: boolean;
   sellerType: 'all' | 'store' | 'individual'; // Lọc theo vựa thu mua hoặc người bán đơn lẻ
+  priceRange?: PriceRangeFilter;
+  sortBy?: SortOption;
+  onlyFree?: boolean;
 }
 
 // ==========================================
@@ -136,4 +142,28 @@ export interface ForumFilterState {
   district: string; // 'all' | string
   category: ProductCategory | 'all';
   searchQuery: string;
+  priceRange?: PriceRangeFilter;
+  sortBy?: SortOption;
+  onlyFree?: boolean;
 }
+
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface FavoriteItem {
+  id: string;
+  type: 'post' | 'product';
+  title: string;
+  price: ProductPrice;
+  image?: string;
+  location?: string;
+  authorOrShopName?: string;
+  phone?: string;
+  zalo?: string;
+  savedAt: string;
+  targetUrl: string; // link to deep open post or seller
+}
+
+

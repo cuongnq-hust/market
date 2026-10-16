@@ -9,4 +9,5 @@ export const dataService: IDataService = isSupabaseConfigured ? supabaseService 
 export { isSupabaseConfigured } from './supabaseClient';
 export { mockService } from './mockService';
 export { supabaseService } from './supabaseService';
+export * from './realtimeSync';
 export * from './db.interface';

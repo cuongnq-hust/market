@@ -2,15 +2,78 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pass Đồ" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#16a34a" />
-    <meta name="description" content="Pass Đồ Gần Nhà - Bản đồ thu mua & thanh lý đồ cũ theo vị trí địa lý" />
-    <title>Pass Đồ Gần Nhà - Thu mua & Thanh lý đồ cũ</title>
+    <meta name="theme-color" content="#2563eb" />
+    <title>Pass Đồ Gần Nhà - Bản đồ thu mua &amp; thanh lý đồ cũ</title>
+    <meta name="description" content="Nền tảng kết nối thanh lý và thu mua đồ cũ theo định vị bán kính xung quanh bạn. Tìm kiếm vựa ve chai, điểm pass đồ cá nhân tiện lợi, nhanh chóng." />
+    <meta name="keywords" content="pass đồ gần nhà, thanh lý đồ cũ, bản đồ thu mua, ve chai gần đây, đồ cũ hà nội, thanh lý gia đình, đồ điện tử cũ" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://passdogannha.vn/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://passdogannha.vn/" />
+    <meta property="og:site_name" content="Pass Đồ Gần Nhà" />
+    <meta property="og:title" content="Pass Đồ Gần Nhà - Bản đồ thu mua &amp; thanh lý đồ cũ" />
+    <meta property="og:description" content="Khám phá điểm pass đồ cũ, vựa ve chai ngay quanh khu vực bạn sinh sống với bản đồ định vị bán kính trực quan." />
+    <meta property="og:image" content="https://passdogannha.vn/icons/icon-512.svg" />
+    <meta property="og:locale" content="vi_VN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pass Đồ Gần Nhà - Chợ thanh lý bản đồ" />
+    <meta name="twitter:description" content="Nền tảng bản đồ thu mua, pass đồ cũ tức thì xung quanh vị trí của bạn." />
+    <meta name="twitter:image" content="https://passdogannha.vn/icons/icon-512.svg" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://passdogannha.vn/#website",
+          "url": "https://passdogannha.vn/",
+          "name": "Pass Đồ Gần Nhà",
+          "description": "Bản đồ thu mua và thanh lý đồ cũ theo vị trí địa lý",
+          "inLanguage": "vi-VN",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://passdogannha.vn/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://passdogannha.vn/#app",
+          "name": "Pass Đồ Gần Nhà",
+          "url": "https://passdogannha.vn/",
+          "applicationCategory": "ShoppingApplication",
+          "operatingSystem": "All",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "VND"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Google Fonts: Plus Jakarta Sans for friendly, modern Vietnamese typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   </head>
-  <body class="bg-gray-50 text-gray-900 antialiased selection:bg-brand-500 selection:text-white">
+  <body class="bg-[#f0f5fa] text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -103,3 +103,20 @@ export const HANOI_DISTRICTS = [
   'Long Biên',
   'Gia Lâm',
 ];
+
+export const PRICE_RANGE_OPTIONS = [
+  { label: 'Tất cả mức giá', value: 'all' },
+  { label: '🎁 Đồ 0đ (Cho tặng miễn phí)', value: 'free' },
+  { label: 'Dưới 100.000₫', value: 'under_100k' },
+  { label: '100.000₫ - 500.000₫', value: '100k_500k' },
+  { label: 'Trên 1.000.000₫', value: 'over_1m' },
+  { label: 'Giá thương lượng', value: 'negotiable' },
+];
+
+export const SORT_OPTIONS = [
+  { label: '🕒 Mới nhất trước', value: 'newest' },
+  { label: '⚡ Cần bán gấp trong ngày', value: 'urgent' },
+  { label: '💰 Giá thấp đến cao', value: 'price_asc' },
+  { label: '💎 Giá cao đến thấp', value: 'price_desc' },
+];
+

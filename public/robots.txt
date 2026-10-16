@@ -1,0 +1,6 @@
+# Robots.txt for Pass Đồ Gần Nhà
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://passdogannha.vn/sitemap.xml

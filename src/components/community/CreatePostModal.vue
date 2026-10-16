@@ -55,6 +55,8 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const isUploadingImage = ref(false);
 const customImageUrl = ref('');
 const isSubmitting = ref(false);
+const successMessage = ref<string | null>(null);
+const errorMessage = ref<string | null>(null);
 
 // Preset sample photos for quick demo
 const presetImages = [
@@ -75,15 +77,21 @@ const handleFileUpload = async (event: Event) => {
   if (!files || files.length === 0) return;
 
   isUploadingImage.value = true;
+  const MAX_IMAGES = 5;
   try {
     for (let i = 0; i < files.length; i++) {
+      if (form.images.length >= MAX_IMAGES) {
+        errorMessage.value = `Chỉ được chọn tối đa ${MAX_IMAGES} ảnh cho mỗi bài đăng`;
+        break;
+      }
       const file = files[i];
       // Compress client-side to lightweight JPEG DataURL
       const compressedDataUrl = await compressImageFile(file, 1000, 0.8);
       addImage(compressedDataUrl);
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Lỗi nén ảnh:', err);
+    errorMessage.value = err?.message || 'Lỗi khi xử lý ảnh tải lên';
   } finally {
     isUploadingImage.value = false;
     // Reset file input so user can choose same file again if needed
@@ -92,6 +100,10 @@ const handleFileUpload = async (event: Event) => {
 };
 
 const addImage = (url: string) => {
+  if (form.images.length >= 5) {
+    errorMessage.value = 'Chỉ được chọn tối đa 5 ảnh cho mỗi bài đăng';
+    return;
+  }
   if (url && !form.images.includes(url)) {
     form.images.push(url);
   }
@@ -115,9 +127,18 @@ const addCustomImage = () => {
 };
 
 const handleSubmit = async () => {
-  if (!form.title.trim() || !form.content.trim()) return;
+  if (!form.title.trim()) {
+    errorMessage.value = 'Vui lòng nhập tiêu đề bài viết.';
+    return;
+  }
+  if (!form.content.trim()) {
+    errorMessage.value = 'Vui lòng nhập nội dung chi tiết bài viết.';
+    return;
+  }
 
   isSubmitting.value = true;
+  errorMessage.value = null;
+
   try {
     let finalPrice: ProductPrice = form.priceAmount;
     if (form.priceMode === 'negotiable') finalPrice = 'negotiable';
@@ -156,10 +177,14 @@ const handleSubmit = async () => {
       },
     });
 
-    isCreateModalOpen.value = false;
-    emit('close');
-  } catch (err) {
+    successMessage.value = '🎉 Đăng tin thành công! Tin của bạn đã được lưu vào cơ sở dữ liệu.';
+    setTimeout(() => {
+      isCreateModalOpen.value = false;
+      emit('close');
+    }, 1200);
+  } catch (err: any) {
     console.error('Failed to create post:', err);
+    errorMessage.value = 'Lỗi lưu tin: ' + (err?.message || 'Không thể lưu lên Supabase');
   } finally {
     isSubmitting.value = false;
   }
@@ -170,14 +195,14 @@ const handleSubmit = async () => {
   <div class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-fade-in">
     <div class="relative bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-gray-100">
       <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-orange-50/60 to-white">
+      <div class="px-6 py-4 border-b border-blue-100 flex items-center justify-between bg-gradient-to-r from-blue-50/80 to-white">
         <div class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-xs">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
             <Plus class="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-gray-900 leading-tight">Đăng Tin Diễn Đàn</h2>
-            <p class="text-xs text-gray-500">Kết nối nhanh người bán và người thu mua đồ cũ</p>
+            <h2 class="text-lg font-black text-slate-900 leading-tight">Đăng Tin Diễn Đàn</h2>
+            <p class="text-xs text-slate-500">Kết nối nhanh người bán và người thu mua đồ cũ</p>
           </div>
         </div>
 
@@ -185,6 +210,28 @@ const handleSubmit = async () => {
           @click="$emit('close')"
           class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition active:scale-90"
         >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+
+      <!-- Success Notification Banner -->
+      <div
+        v-if="successMessage"
+        class="bg-emerald-600 text-white px-5 py-3 text-xs sm:text-sm font-bold flex items-center justify-between shadow-inner animate-fade-in"
+      >
+        <span>{{ successMessage }}</span>
+        <button type="button" @click="successMessage = null" class="text-white/80 hover:text-white">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+
+      <!-- Error Notification Banner -->
+      <div
+        v-if="errorMessage"
+        class="bg-red-500 text-white px-5 py-2.5 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-inner animate-fade-in"
+      >
+        <span>{{ errorMessage }}</span>
+        <button type="button" @click="errorMessage = null" class="text-white/80 hover:text-white">
           <X class="w-4 h-4" />
         </button>
       </div>
@@ -509,7 +556,7 @@ const handleSubmit = async () => {
           <button
             type="submit"
             :disabled="isSubmitting || !form.title.trim() || !form.content.trim()"
-            class="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-orange-500/20 transition active:scale-95 disabled:bg-gray-300"
+            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 transition active:scale-95 disabled:bg-slate-300 cursor-pointer"
           >
             {{ isSubmitting ? 'Đang đăng tin...' : 'Đăng bài lên Diễn đàn' }}
           </button>

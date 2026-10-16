@@ -10,6 +10,7 @@ import type {
   SellerProfile,
   SellerWithDistance,
   User,
+  PaginationParams,
 } from '../types/database';
 import { MOCK_USERS } from '../mock/users';
 import { MOCK_SELLERS } from '../mock/sellers';
@@ -199,6 +200,24 @@ class MockDataService implements IDataService {
         }
       }
 
+      // Price range / Free gift filter
+      if (filters.priceRange && filters.priceRange !== 'all') {
+        const sellerProducts = this.products.filter(
+          (p) => p.sellerId === seller.userId && p.status === 'available'
+        );
+        const hasMatchingProduct = sellerProducts.some((p) => {
+          if (filters.priceRange === 'free') return p.price === 'free' || p.price === 0;
+          if (filters.priceRange === 'negotiable') return p.price === 'negotiable';
+          if (typeof p.price === 'number') {
+            if (filters.priceRange === 'under_100k') return p.price > 0 && p.price <= 100000;
+            if (filters.priceRange === '100k_500k') return p.price > 100000 && p.price <= 500000;
+            if (filters.priceRange === 'over_1m') return p.price >= 1000000;
+          }
+          return false;
+        });
+        if (!hasMatchingProduct) return false;
+      }
+
       return true;
     });
 
@@ -260,6 +279,19 @@ class MockDataService implements IDataService {
       if (distanceKm > filters.radiusKm) continue;
       if (filters.onlyOpenNow && !seller.isOpenNow) continue;
       if (filters.category !== 'all' && product.category !== filters.category) continue;
+
+      // Price range / Free gift filter
+      if (filters.priceRange && filters.priceRange !== 'all') {
+        if (filters.priceRange === 'free' && !(product.price === 'free' || product.price === 0)) continue;
+        if (filters.priceRange === 'negotiable' && product.price !== 'negotiable') continue;
+        if (typeof product.price === 'number') {
+          if (filters.priceRange === 'under_100k' && !(product.price > 0 && product.price <= 100000)) continue;
+          if (filters.priceRange === '100k_500k' && !(product.price > 100000 && product.price <= 500000)) continue;
+          if (filters.priceRange === 'over_1m' && !(product.price >= 1000000)) continue;
+        } else if (filters.priceRange !== 'free' && filters.priceRange !== 'negotiable') {
+          continue;
+        }
+      }
 
       if (query) {
         const matchesTitle = product.title.toLowerCase().includes(query);
@@ -328,7 +360,10 @@ class MockDataService implements IDataService {
   }
 
   // ================= PHASE 2: COMMUNITY FORUM HUB =================
-  async getForumPosts(filters: ForumFilterState): Promise<ForumPost[]> {
+  async getForumPosts(
+    filters: ForumFilterState,
+    pagination?: PaginationParams
+  ): Promise<ForumPost[]> {
     const query = filters.searchQuery.trim().toLowerCase();
     const currentDeviceId = getAnonymousDeviceId();
     const now = Date.now();
@@ -367,15 +402,57 @@ class MockDataService implements IDataService {
         }
       }
 
+      // 3. Price range filter
+      if (filters.priceRange && filters.priceRange !== 'all') {
+        const price = post.price;
+        if (filters.priceRange === 'free' && !(price === 'free' || price === 0)) {
+          return false;
+        }
+        if (filters.priceRange === 'negotiable' && price !== 'negotiable') {
+          return false;
+        }
+        if (typeof price === 'number') {
+          if (filters.priceRange === 'under_100k' && !(price > 0 && price <= 100000)) return false;
+          if (filters.priceRange === '100k_500k' && !(price > 100000 && price <= 500000)) return false;
+          if (filters.priceRange === 'over_1m' && !(price >= 1000000)) return false;
+        } else if (filters.priceRange !== 'free' && filters.priceRange !== 'negotiable') {
+          return false;
+        }
+      }
+
       return true;
     }).map((post) => ({
       ...post,
       isMyPost: post.author.id === currentDeviceId,
     }));
 
-    return filtered.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    // Sorting
+    const sorted = [...filtered].sort((a, b) => {
+      if (filters.sortBy === 'urgent') {
+        if (a.isUrgent && !b.isUrgent) return -1;
+        if (!a.isUrgent && b.isUrgent) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (filters.sortBy === 'price_asc') {
+        const getVal = (p: typeof a.price) => (p === 'free' ? 0 : typeof p === 'number' ? p : 999999999);
+        return getVal(a.price) - getVal(b.price);
+      }
+      if (filters.sortBy === 'price_desc') {
+        const getVal = (p: typeof a.price) => (p === 'free' ? 0 : typeof p === 'number' ? p : -1);
+        return getVal(b.price) - getVal(a.price);
+      }
+      // default: newest
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    if (pagination?.pageSize) {
+      const page = Math.max(1, pagination.page ?? 1);
+      const pageSize = pagination.pageSize;
+      const from = (page - 1) * pageSize;
+      return sorted.slice(from, from + pageSize);
+    }
+
+    return sorted;
   }
 
   async getForumPostById(id: string): Promise<ForumPost | null> {
